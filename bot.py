@@ -75,9 +75,8 @@ async def level_handler(update: Update, context):
     reply_markup = InlineKeyboardMarkup(buttons)
     await query.message.reply_text(f"{chosen_level}\nHere is your video:", reply_markup=reply_markup)
     
-    # Send the video using the file_id
-    await context.bot.send_video(
-        chat_id=query.message.chat.id,
+   # Send the video using the file_id
+    await query.message.reply_video(
         video=video_id,  # Using file_id instead of URL
         protect_content=True  # Prevent the user from saving, forwarding, or downloading the video
     )
