@@ -14,6 +14,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Define the file_id for each video (obtained from Telegram)
+videos = {
+    'amateur': 'AAMCAgADGQEBhuW8Zu6seD3g8jDpeSqFqufiWLJMA5wAAvFTAAIgkHhLRPKb2_1N9OoBAAdtAAM2BA',  # Replace with actual file_id
+    'chmo': 'AAMCAgADGQEBhuW8Zu6seD3g8jDpeSqFqufiWLJMA5wAAvFTAAIgkHhLRPKb2_1N9OoBAAdtAAM2BA',        # Replace with actual file_id
+    'loh': 'AAMCAgADGQEBhuW8Zu6seD3g8jDpeSqFqufiWLJMA5wAAvFTAAIgkHhLRPKb2_1N9OoBAAdtAAM2BA'           # Replace with actual file_id
+}
+
 # Start command handler
 async def start(update: Update, context):
     logger.info(f"User {update.effective_user.id} started the bot.")
@@ -61,7 +68,20 @@ async def level_handler(update: Update, context):
 
     # Respond with the chosen level
     chosen_level = level_map[query.data]
-    await query.message.reply_text(chosen_level)
+    video_id = videos[query.data.split('_')[1]]  # Get video file_id for the chosen level
+    buttons = [
+        [InlineKeyboardButton("Return", callback_data="lets_try")],  # Button to return to level selection
+    ]
+    reply_markup = InlineKeyboardMarkup(buttons)
+    await query.message.reply_text(f"{chosen_level}\nHere is your video:", reply_markup=reply_markup)
+    
+    # Send the video using the file_id
+    await context.bot.send_video(
+        chat_id=query.message.chat.id,
+        video=video_id,  # Using file_id instead of URL
+        protect_content=True  # Prevent the user from saving, forwarding, or downloading the video
+    )
+
     logger.info(f"User {query.from_user.id} chose {chosen_level}.")
 
 def main():
