@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 # Define the file_id for each video (obtained from Telegram)
 videos = {
-    'amateur': 'AAMCAgADGQEBhuW8Zu6seD3g8jDpeSqFqufiWLJMA5wAAvFTAAIgkHhLRPKb2_1N9OoBAAdtAAM2BA',  # Replace with actual file_id
-    'chmo': 'AAMCAgADGQEBhuW8Zu6seD3g8jDpeSqFqufiWLJMA5wAAvFTAAIgkHhLRPKb2_1N9OoBAAdtAAM2BA',        # Replace with actual file_id
-    'loh': 'AAMCAgADGQEBhuW8Zu6seD3g8jDpeSqFqufiWLJMA5wAAvFTAAIgkHhLRPKb2_1N9OoBAAdtAAM2BA'           # Replace with actual file_id
+    'amateur': 'AgAD8VMAAiCQeEs',  # Replace with actual file_id
+    'chmo': 'AgAD8VMAAiCQeEs',        # Replace with actual file_id
+    'loh': 'AgAD8VMAAiCQeEs'           # Replace with actual file_id
 }
 
 # Start command handler
