@@ -1,7 +1,9 @@
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters
 from config import TOKEN
+
+
 
 # Configure logging
 logging.basicConfig(
@@ -52,6 +54,14 @@ async def lets_try_handler(update: Update, context):
     # Send the level selection message
     await query.message.reply_text("Choose your level:", reply_markup=reply_markup)
     logger.info(f"Sent level selection options to user {query.from_user.id}.")
+    
+async def log_video_id(update: Update, context):
+    video = update.message.video
+    if video:
+        file_id = video.file_id
+        await update.message.reply_text(f"Received video. file_id: {file_id}")
+        print(f"Video file_id: {file_id}")  # Log the file_id in the console
+
 
 # Handle the level selection
 async def level_handler(update: Update, context):
@@ -92,7 +102,9 @@ def main():
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CallbackQueryHandler(lets_try_handler, pattern="lets_try"))
     application.add_handler(CallbackQueryHandler(level_handler, pattern="level_"))
+    #TEMPORARY
 
+    application.add_handler(MessageHandler(filters.VIDEO, log_video_id))
     # Start polling for updates
     logger.info("Bot started. Now polling for updates.")
     application.run_polling()
