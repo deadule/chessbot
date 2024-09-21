@@ -1,0 +1,43 @@
+name: Run Telegram Bot
+
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on push to the main branch
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'  # Use the version you need (e.g., '3.9')
+
+      - name: Install dependencies
+        run: |
+          pip install python-telegram-bot==20.3
+
+
+      - name: Run Telegram Bot
+        run: |
+          nohup python bot.py > bot.log 2>&1 &  # Run bot in the background and log output
+        continue-on-error: true  # Continue the workflow even if the bot encounters an error
+
+      - name: Wait for the bot to run
+        run: sleep 20  # Wait for the bot to run for a few seconds
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: bot-log
+          path: bot.log  # Upload the bot log file as an artifact
+
+      - name: Share log link
+        run: |
+          echo "The bot log is available at this link:"
+          echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifact"
