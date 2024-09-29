@@ -19,18 +19,18 @@ logger = logging.getLogger(__name__)
 # Define the file_id for each video in different qualities (Replace with actual file_id)
 videos = {
     'amateur': {
-        '480p': 'file_id_amateur_480p',  # Replace with actual file_id
-        '720p': 'file_id_amateur_720p',
+        '480p': 'BAACAgIAAxkBAAMGZu6sLcqTvVAXC9CWzFNWDtJ9FbQAAvJTAAIgkHhLyPWR5tPsRAg2BA',  # Replace with actual file_id
+        '720p': 'BAACAgIAAxkBAAMGZu6sLcqTvVAXC9CWzFNWDtJ9FbQAAvJTAAIgkHhLyPWR5tPsRAg2BA',
         '1080p': 'file_id_amateur_1080p'
     },
     'chmo': {
-        '480p': 'file_id_chmo_480p',
-        '720p': 'file_id_chmo_720p',
+        '480p': 'BAACAgIAAxkBAAMGZu6sLcqTvVAXC9CWzFNWDtJ9FbQAAvJTAAIgkHhLyPWR5tPsRAg2BA',
+        '720p': 'BAACAgIAAxkBAAMGZu6sLcqTvVAXC9CWzFNWDtJ9FbQAAvJTAAIgkHhLyPWR5tPsRAg2BA',
         '1080p': 'file_id_chmo_1080p'
     },
     'loh': {
-        '480p': 'file_id_loh_480p',
-        '720p': 'file_id_loh_720p',
+        '480p': 'BAACAgIAAxkBAAMGZu6sLcqTvVAXC9CWzFNWDtJ9FbQAAvJTAAIgkHhLyPWR5tPsRAg2BA',
+        '720p': 'BAACAgIAAxkBAAMGZu6sLcqTvVAXC9CWzFNWDtJ9FbQAAvJTAAIgkHhLyPWR5tPsRAg2BA',
         '1080p': 'file_id_loh_1080p'
     }
 }
