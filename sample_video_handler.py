@@ -3,10 +3,11 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 
 logger = logging.getLogger(__name__)
 
-# Define the sample video file_id for each level
+# Define the file_id for each video (Replace with actual file_id)
 sample_videos = {
-    'level_1': 'AAMCAgADGQEBjAupZvk703rUlXtnNAwKe-_3U1112OMAAlpTAALMEclLAY6thrApV4gBAAdtAAM2BA',  # Example file_id
-    # Add other levels as needed
+    'level_1': 'AAMCAgADGQEBjAupZvk703rUlXtnNAwKe-_3U1112OMAAlpTAALMEclLAY6thrApV4gBAAdtAAM2BA',  # Replace with actual file_id
+    'level_2': 'AAMCAgADGQEBjAupZvk703rUlXtnNAwKe-_3U1112OMAAlpTAALMEclLAY6thrApV4gBAAdtAAM2BA',  # Replace with actual file_id
+    'level_3': 'AAMCAgADGQEBjAupZvk703rUlXtnNAwKe-_3U1112OMAAlpTAALMEclLAY6thrApV4gBAAdtAAM2BA'  # Replace with actual file_id
 }
 
 # Helper function to create the action buttons
@@ -16,20 +17,40 @@ def action_buttons():
         [InlineKeyboardButton("Главное меню", callback_data="return_main_menu")]
     ])
 
-# Handle the selection of a video based on the level
+# Handle the "Посмотреть Пробное Видео" button
 async def handle_sample_video(update: Update, context):
     query = update.callback_query
     await query.answer()
 
-    # Add detailed logging
+    logger.info(f"User {query.from_user.id} selected 'Посмотреть Пробное Видео'.")
+
+    # Create buttons for selecting a video for each level
+    video_kb = [
+        [InlineKeyboardButton("Видео для Уровня 1", callback_data="sample_level_1")],
+        [InlineKeyboardButton("Видео для Уровня 2", callback_data="sample_level_2")],
+        [InlineKeyboardButton("Видео для Уровня 3", callback_data="sample_level_3")],
+        [InlineKeyboardButton("Return", callback_data="return_main_menu")]  # Add return button
+    ]
+    reply_markup = InlineKeyboardMarkup(video_kb)
+
+    # Ask the user to choose a video level
+    await query.message.reply_text("Выберите видео для вашего уровня:", reply_markup=reply_markup)
+
+# Handle the selection of a video based on the level
+async def handle_video_level_selection(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+
     logger.info(f"User {query.from_user.id} selected a video level. Callback data: {query.data}")
 
-    # Determine which video to send based on the button clicked
+    # Mapping callback data to video levels
     level_map = {
-        'sample_level_1': 'level_1'
-        # Add more levels if needed
+        'sample_level_1': 'level_1',
+        'sample_level_2': 'level_2',
+        'sample_level_3': 'level_3'
     }
 
+    # Get the selected level from the callback data
     selected_level = level_map.get(query.data)
 
     # If the selected level is invalid, log it and return
@@ -38,7 +59,7 @@ async def handle_sample_video(update: Update, context):
         await query.message.reply_text("Invalid video level selected.")
         return
 
-    # Get the corresponding video_id
+    # Get the corresponding video_id from sample_videos
     video_id = sample_videos.get(selected_level)
 
     # If no video_id exists, log it and return
