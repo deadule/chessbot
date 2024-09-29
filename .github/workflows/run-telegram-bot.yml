@@ -22,25 +22,23 @@ jobs:
         run: |
           pip install python-telegram-bot==20.3
 
-
       - name: Run Telegram Bot
         run: |
-          nohup python bot.py > bot.log 2>&1 &  # Run bot in the background and log output
+          nohup python bot.py 2>&1 | tee bot.log &  # Run bot and display logs in real-time while also saving to bot.log
         continue-on-error: true  # Continue the workflow even if the bot encounters an error
 
-      - name: Wait for the bot to run
-        run: sleep 20  # Wait for the bot to run for a few seconds
-
       - name: Keep the job running
-        run: sleep infinity  
+        run: sleep infinity  # Keep the workflow running indefinitely
 
       - name: Upload logs
+        if: failure()  # Upload logs if the workflow fails
         uses: actions/upload-artifact@v3
         with:
           name: bot-log
           path: bot.log  # Upload the bot log file as an artifact
 
       - name: Share log link
+        if: failure()  # Only show this link if the workflow fails
         run: |
           echo "The bot log is available at this link:"
           echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifact"
