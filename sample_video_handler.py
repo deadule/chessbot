@@ -3,7 +3,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 
 logger = logging.getLogger(__name__)
 
-# Define the sample video file_id for each level (replace with actual file_id)
+# Define the sample video file_id for each level (replace with actual file_id
 sample_videos = {
     'level_1': 'AAMCAgADGQEBhuW8Zu6seD3g8jDpeSqFqufiWLJMA5wAAvFTAAIgkHhLRPKb2_1N9OoBAAdtAAM2BA
 ',
