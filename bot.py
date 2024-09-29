@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 # Define the file_id for each video in different qualities (Replace with actual file_id)
 videos = {
     'amateur': {
-        '480p': 'AgAD8lMAAswRyUs',  # Replace with actual file_id
-        '720p': 'AgAD8lMAAswRyUs',
-        '1080p': 'AgAD8lMAAswRyUs'
+        '480p': 'AAMCAgADGQEBjBRbZvlIug3_U20y1Sx5bHpVrl0KYrgAAq9VAALZsNFL-FoUM0fGwsEBAAdtAAM2BA',  # Replace with actual file_id
+        '720p': 'AAMCAgADGQEBjBRbZvlIug3_U20y1Sx5bHpVrl0KYrgAAq9VAALZsNFL-FoUM0fGwsEBAAdtAAM2BA',
+        '1080p': 'AAMCAgADGQEBjBRbZvlIug3_U20y1Sx5bHpVrl0KYrgAAq9VAALZsNFL-FoUM0fGwsEBAAdtAAM2BA'
     },
     'chmo': {
         '480p': 'AgAD8lMAAswRyUs',
