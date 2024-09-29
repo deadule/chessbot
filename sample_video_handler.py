@@ -5,9 +5,9 @@ logger = logging.getLogger(__name__)
 
 # Define the sample video file_id for each level (replace with actual file_id
 sample_videos = {
-    'level_1': 'AAMCAgADGQEBjAupZvk703rUlXtnNAwKe-_3U1112OMAAlpTAALMEclLAY6thrApV4gBAAdtAAM2BA',
-    'level_2': 'AAMCAgADGQEBjAupZvk703rUlXtnNAwKe-_3U1112OMAAlpTAALMEclLAY6thrApV4gBAAdtAAM2BA',
-    'level_3': 'AAMCAgADGQEBjAupZvk703rUlXtnNAwKe-_3U1112OMAAlpTAALMEclLAY6thrApV4gBAAdtAAM2BA'
+    'level_1': 'BAACAgIAAxkBAAMGZu6sLcqTvVAXC9CWzFNWDtJ9FbQAAvJTAAIgkHhLyPWR5tPsRAg2BA',
+    'level_2': 'BAACAgIAAxkBAAMGZu6sLcqTvVAXC9CWzFNWDtJ9FbQAAvJTAAIgkHhLyPWR5tPsRAg2BA',
+    'level_3': 'BAACAgIAAxkBAAMGZu6sLcqTvVAXC9CWzFNWDtJ9FbQAAvJTAAIgkHhLyPWR5tPsRAg2BA'
 }
 
 # Helper function to create the "Let's Try", "Главное меню", and "Return" buttons
