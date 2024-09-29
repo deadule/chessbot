@@ -24,7 +24,8 @@ jobs:
 
       - name: Run Telegram Bot
         run: |
-          nohup python bot.py 2>&1 | tee bot.log &  # Run bot and display logs in real-time while also saving to bot.log
+          python bot.py 2>&1 | tee bot.log  
+        # Run bot and display logs in real-time while also saving to bot.log
         continue-on-error: true  # Continue the workflow even if the bot encounters an error
 
       - name: Keep the job running
