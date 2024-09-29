@@ -17,7 +17,7 @@ def action_buttons():
     ])
 
 # Handle the selection of a video based on the level
-async def handle_video_level_selection(update: Update, context):
+async def handle_sample_video(update: Update, context):
     query = update.callback_query
     await query.answer()
 
