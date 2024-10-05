@@ -5,9 +5,9 @@ logger = logging.getLogger(__name__)
 
 # Define the file_id for each video (Replace with actual file_id)
 sample_videos = {
-    'level_1': 'AgAD8lMAAswRyUs',  # Replace with actual file_id
-    'level_2': 'AAMCAgADGQEBjAupZvk703rUlXtnNAwKe-_3U1112OMAAlpTAALMEclLAY6thrApV4gBAAdtAAM2BA',  # Replace with actual file_id
-    'level_3': 'AAMCAgADGQEBjAupZvk703rUlXtnNAwKe-_3U1112OMAAlpTAALMEclLAY6thrApV4gBAAdtAAM2BA'  # Replace with actual file_id
+    'level_1': 'BAACAgIAAxkBAANqZwAB78tI-rqQKNQcXED4DmE0qs2FAAIMVAACBeUISCwVSWpKiDVdNgQ',  # Replace with actual file_id
+    'level_2': 'BAACAgIAAxkBAANqZwAB78tI-rqQKNQcXED4DmE0qs2FAAIMVAACBeUISCwVSWpKiDVdNgQ',  # Replace with actual file_id
+    'level_3': 'BAACAgIAAxkBAANqZwAB78tI-rqQKNQcXED4DmE0qs2FAAIMVAACBeUISCwVSWpKiDVdNgQ'  # Replace with actual file_id
 }
 
 # Helper function to create the action buttons
