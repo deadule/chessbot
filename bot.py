@@ -3,6 +3,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 from config import TOKEN
 from sample_video_handler import handle_sample_video
+from sample_video_handler import handle_video_level_selection
 from find_level_handler import handle_find_level
 
 # Configure logging
