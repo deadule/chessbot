@@ -22,31 +22,16 @@ jobs:
         run: |
           pip install python-telegram-bot==20.3
 
-      # Step 1: Run upload_video_handler.py to get file_id (optional)
-      - name: Run Upload Video Handler
-        run: |
-          python upload_video_handler.py 2>&1 | tee upload_video.log  
-        # This runs upload_video_handler.py and logs the output to upload_video.log
-        continue-on-error: true  # Continue even if there is an error (optional if not always needed)
-
-      - name: Upload video logs
-        if: failure()  # Only upload logs if this part fails
-        uses: actions/upload-artifact@v3
-        with:
-          name: upload-video-log
-          path: upload_video.log  # Upload the video log file as an artifact
-
-      # Step 2: Run main bot.py after you've obtained the file_id
       - name: Run Telegram Bot
         run: |
           python bot.py 2>&1 | tee bot.log  
-        # Run bot.py for main bot functionality and log output to bot.log
+        # Run bot and display logs in real-time while also saving to bot.log
         continue-on-error: true  # Continue the workflow even if the bot encounters an error
 
       - name: Keep the job running
         run: sleep infinity  # Keep the workflow running indefinitely
 
-      - name: Upload bot logs
+      - name: Upload logs
         if: failure()  # Upload logs if the workflow fails
         uses: actions/upload-artifact@v3
         with:
