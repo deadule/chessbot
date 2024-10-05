@@ -177,6 +177,7 @@ def main():
 
         # Import and add separate handlers for additional buttons
         application.add_handler(CallbackQueryHandler(handle_sample_video, pattern="sample_video"))
+        application.add_handler(CallbackQueryHandler(handle_video_level_selection, pattern="sample_level_"))
         application.add_handler(CallbackQueryHandler(handle_find_level, pattern="find_level"))
 
         # Start polling for updates
