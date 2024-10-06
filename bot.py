@@ -59,33 +59,53 @@ async def start(update: Update, context):
     except Exception as e:
         logger.error(f"Error in start handler: {e}")
 
-# Handle the "Let's Try" button (level selection)
+# Handle the "Let's Try" button
 async def lets_try_handler(update: Update, context):
     try:
         query = update.callback_query
         await query.answer()
 
-        # Handle authorization from the auth_handler file
-        authorized = await handle_authorization(update, context)
-        
-        if authorized:
-            logger.info(f"User {query.from_user.id} is authorized, proceeding to level selection.")
-            
-            # Creating buttons for level selection, plus a return button
-            level_kb = [
-                [InlineKeyboardButton("Amateur", callback_data="level_amateur")],
-                [InlineKeyboardButton("Chmo", callback_data="level_chmo")],
-                [InlineKeyboardButton("Loh Konkретniy", callback_data="level_loh")],
-                [InlineKeyboardButton("Return", callback_data="return_main_menu")]  # Return button
-            ]
-            reply_markup = InlineKeyboardMarkup(level_kb)
-            
-            # Send the level selection message
-            await query.message.reply_text("Choose your level:", reply_markup=reply_markup)
-        else:
-            logger.error(f"User {query.from_user.id} could not be authorized.")
+        logger.info(f"User {query.from_user.id} pressed 'Let's Try'.")
+
+        # Creating a button for the payment step
+        payment_kb = [
+            [InlineKeyboardButton("Proceed to Payment", callback_data="proceed_payment")],
+            [InlineKeyboardButton("Return", callback_data="return_main_menu")]  # Return button
+        ]
+        reply_markup = InlineKeyboardMarkup(payment_kb)
+
+        # Prompt for the payment option
+        await query.message.reply_text("Please proceed to payment to unlock content:", reply_markup=reply_markup)
     except Exception as e:
         logger.error(f"Error in lets_try_handler: {e}")
+
+# Handle the payment step (after payment the user is authorized and proceeds to level selection)
+async def handle_payment_step(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+
+    logger.info(f"User {query.from_user.id} is proceeding to payment.")
+
+    # Handle authorization from the auth_handler file
+    authorized = await handle_authorization(update, context)
+    
+    if authorized:
+        logger.info(f"User {query.from_user.id} is authorized after payment, proceeding to level selection.")
+        
+        # Creating buttons for level selection, plus a return button
+        level_kb = [
+            [InlineKeyboardButton("Amateur", callback_data="level_amateur")],
+            [InlineKeyboardButton("Chmo", callback_data="level_chmo")],
+            [InlineKeyboardButton("Loh Konkретniy", callback_data="level_loh")],
+            [InlineKeyboardButton("Return", callback_data="return_main_menu")]  # Return button
+        ]
+        reply_markup = InlineKeyboardMarkup(level_kb)
+        
+        # Send the level selection message
+        await query.message.reply_text("Payment successful! Now choose your level:", reply_markup=reply_markup)
+    else:
+        logger.error(f"User {query.from_user.id} could not be authorized after payment.")
+        await query.message.reply_text("Authorization failed. Please try again.")
 
 # Handle the level selection
 async def level_handler(update: Update, context):
@@ -172,7 +192,7 @@ async def return_main_menu_handler(update: Update, context):
 # Main function to start the bot and handlers
 def main():
     try:
-# Initialize the database for authorization
+        # Initialize the database for authorization
         init_db()
         application = Application.builder().token(TOKEN).build()
         logger.info("Bot is starting...")
@@ -180,6 +200,7 @@ def main():
         # Add command and callback handlers
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CallbackQueryHandler(lets_try_handler, pattern="lets_try"))
+        application.add_handler(CallbackQueryHandler(handle_payment_step, pattern="proceed_payment"))
         application.add_handler(CallbackQueryHandler(level_handler, pattern="level_"))
         application.add_handler(CallbackQueryHandler(quality_handler, pattern="quality_"))
         application.add_handler(CallbackQueryHandler(return_main_menu_handler, pattern="return_main_menu"))
