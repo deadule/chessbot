@@ -4,6 +4,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 from config import TOKEN
 from sample_video_handler import handle_sample_video
 from sample_video_handler import handle_video_level_selection
+from auth_handler import init_db, handle_authorization 
 from find_level_handler import handle_find_level
 
 # Configure logging
@@ -64,20 +65,25 @@ async def lets_try_handler(update: Update, context):
         query = update.callback_query
         await query.answer()
 
-        logger.info(f"User {query.from_user.id} pressed 'Let's Try'.")
-
-        # Creating buttons for level selection, plus a return button
-        level_kb = [
-            [InlineKeyboardButton("Amateur", callback_data="level_amateur")],
-            [InlineKeyboardButton("Chmo", callback_data="level_chmo")],
-            [InlineKeyboardButton("Loh Konkретniy", callback_data="level_loh")],
-            [InlineKeyboardButton("Return", callback_data="return_main_menu")]  # Return button
-        ]
-        reply_markup = InlineKeyboardMarkup(level_kb)
-
-        # Send the level selection message
-        await query.message.reply_text("Choose your level:", reply_markup=reply_markup)
-        logger.info(f"Sent level selection options to user {query.from_user.id}.")
+        # Handle authorization from the auth_handler file
+        authorized = await handle_authorization(update, context)
+        
+        if authorized:
+            logger.info(f"User {query.from_user.id} is authorized, proceeding to level selection.")
+            
+            # Creating buttons for level selection, plus a return button
+            level_kb = [
+                [InlineKeyboardButton("Amateur", callback_data="level_amateur")],
+                [InlineKeyboardButton("Chmo", callback_data="level_chmo")],
+                [InlineKeyboardButton("Loh Konkретniy", callback_data="level_loh")],
+                [InlineKeyboardButton("Return", callback_data="return_main_menu")]  # Return button
+            ]
+            reply_markup = InlineKeyboardMarkup(level_kb)
+            
+            # Send the level selection message
+            await query.message.reply_text("Choose your level:", reply_markup=reply_markup)
+        else:
+            logger.error(f"User {query.from_user.id} could not be authorized.")
     except Exception as e:
         logger.error(f"Error in lets_try_handler: {e}")
 
@@ -166,6 +172,8 @@ async def return_main_menu_handler(update: Update, context):
 # Main function to start the bot and handlers
 def main():
     try:
+# Initialize the database for authorization
+        init_db()
         application = Application.builder().token(TOKEN).build()
         logger.info("Bot is starting...")
 
