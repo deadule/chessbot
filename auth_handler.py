@@ -1,6 +1,8 @@
 import sqlite3
 import os
 from telegram import Update
+from payment_handler import create_first_payment_with_saving, check_payment_status, handle_payment_confirmation
+
 
 # Define the database path
 DB_PATH = "users.db"
