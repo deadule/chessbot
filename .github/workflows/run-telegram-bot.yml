@@ -21,6 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install python-telegram-bot==20.3
+          pip install yookassa
 
       - name: Run Telegram Bot
         run: |
