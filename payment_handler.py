@@ -2,7 +2,6 @@ import uuid
 from yookassa import Configuration, Payment
 from auth_handler import confirm_payment
 
-
 # Set your ЮKassa credentials
 Configuration.account_id = '470344'
 Configuration.secret_key = 'test_5HI6B6ul3M6PL7B09L2-T5xyeQZDkEt93zetnnAE4zE'
@@ -10,10 +9,10 @@ Configuration.secret_key = 'test_5HI6B6ul3M6PL7B09L2-T5xyeQZDkEt93zetnnAE4zE'
 # Define a fixed amount for payments
 fixed_amount = 10.00  # Fixed amount for both initial and recurring payments (10.00 RUB)
 
-# Create the first payment with redirect confirmation and save the payment method
+# Create the first payment with external confirmation and save the payment method
 async def create_first_payment_with_saving(user_id):
     """
-    Create the first payment and save the payment method for future recurring payments.
+    Create the first payment using external confirmation and save the payment method for future recurring payments.
     """
     try:
         # Create the first payment with save_payment_method set to True
@@ -23,8 +22,7 @@ async def create_first_payment_with_saving(user_id):
                 "currency": "RUB"
             },
             "confirmation": {
-                "type": "redirect",  # Redirect user to ЮKassa for payment
-                "return_url": f"https://example.com/payment/confirmation/{user_id}"  # Adjust this return URL
+                "type": "external"  # External confirmation, user confirms via SMS or bank app
             },
             "capture": True,  # Immediately capture the payment
             "description": f"First payment for User {user_id}",
@@ -34,14 +32,13 @@ async def create_first_payment_with_saving(user_id):
             }
         }, uuid.uuid4())
 
-        # Extract confirmation URL and payment ID
-        confirmation_url = payment.confirmation.confirmation_url
+        # Extract payment ID
         payment_id = payment.id  # Save this for status checking and recurring payments
 
-        return confirmation_url, payment_id
+        return payment_id  # No URL needed for external confirmation
     except Exception as e:
         print(f"Error creating payment: {e}")
-        return None, None
+        return None
 
 # Create a recurring payment using the saved payment method
 async def create_recurring_payment(payment_method_id, user_id):
