@@ -1,6 +1,5 @@
 import uuid
 from yookassa import Configuration, Payment
-from auth_handler import confirm_payment, update_authorization_status
 
 # Set your ЮKassa credentials
 Configuration.account_id = '470344'
