@@ -1,14 +1,13 @@
 import sqlite3
 import os
 from telegram import Update
-from payment_handler import create_first_payment_with_saving, check_payment_status, handle_payment_confirmation
-
 
 # Define the database path
 DB_PATH = "users.db"
+
 # Initialize the database and create the users table if it doesn't exist
 def init_db():
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Create the users table if it doesn't exist
@@ -24,7 +23,7 @@ def init_db():
 
 # Add a new user to the database
 def add_user(user_id, username):
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Insert the user into the database with default 'authorized' status as False
@@ -34,7 +33,7 @@ def add_user(user_id, username):
 
 # Check if the user is already in the database
 def is_user_in_db(user_id):
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Query the user
@@ -47,7 +46,7 @@ def is_user_in_db(user_id):
 
 # Check if the user is authorized
 def is_user_authorized(user_id):
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Check if the user is authorized
@@ -61,7 +60,7 @@ def is_user_authorized(user_id):
 
 # Update the authorization status of the user
 def update_authorization_status(user_id, authorized):
-    conn = sqlite3.connect('users.db')
+    conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
 
     # Update the authorization status of the user
@@ -95,12 +94,6 @@ async def handle_authorization(update, context):
     else:
         # If the user is not authorized, explain the need for payment
         await update.callback_query.message.reply_text(f"User {username}, you are not yet authorized. Please proceed with payment to gain access.")
-        
-        # Trigger the payment process (handled by payment_handler)
-        confirmation_url, payment_id = await create_first_payment_with_saving(user_id, amount=10.00)
-        if confirmation_url:
-            await update.callback_query.message.reply_text(f"Please complete the payment by following this link: {confirmation_url}")
-        else:
-            await update.callback_query.message.reply_text("There was an error processing your payment. Please try again later.")
-        
+
+        # Instead of importing here, call the payment function externally
         return False  # User is not authorized yet, payment required
