@@ -2,8 +2,8 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
 from config import TOKEN
-from sample_video_handler import handle_sample_video
-from sample_video_handler import handle_video_level_selection
+from sample_video_handler import handle_sample_video, handle_video_level_selection
+from payment_handler import create_first_payment_with_saving, handle_payment_confirmation
 from auth_handler import init_db, handle_authorization 
 from find_level_handler import handle_find_level
 
@@ -84,13 +84,34 @@ async def handle_payment_step(update: Update, context):
     query = update.callback_query
     await query.answer()
 
-    logger.info(f"User {query.from_user.id} is proceeding to payment.")
+    # Create payment and get the confirmation URL
+    user_id = query.from_user.id
+    confirmation_url, payment_id = await create_first_payment_with_saving(user_id, 10.00)  # Fixed amount of 100 RUB
+
+    if confirmation_url:
+        # Send the payment link
+        await query.message.reply_text(
+            f"Click the link below to proceed with payment:\n{confirmation_url}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("Proceed to Payment", url=confirmation_url)]
+            ])
+        )
+    else:
+        await query.message.reply_text("Payment creation failed. Please try again.")
+
+# Handle the level selection after successful payment
+async def handle_payment_confirmation(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+
+    logger.info(f"User {query.from_user.id} is proceeding after payment.")
 
     # Handle authorization from the auth_handler file
     authorized = await handle_authorization(update, context)
-    
+
     if authorized:
         logger.info(f"User {query.from_user.id} is authorized after payment, proceeding to level selection.")
+        
         
         # Creating buttons for level selection, plus a return button
         level_kb = [
@@ -201,6 +222,7 @@ def main():
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CallbackQueryHandler(lets_try_handler, pattern="lets_try"))
         application.add_handler(CallbackQueryHandler(handle_payment_step, pattern="proceed_payment"))
+        application.add_handler(CallbackQueryHandler(handle_payment_confirmation, pattern="payment_confirmation"))
         application.add_handler(CallbackQueryHandler(level_handler, pattern="level_"))
         application.add_handler(CallbackQueryHandler(quality_handler, pattern="quality_"))
         application.add_handler(CallbackQueryHandler(return_main_menu_handler, pattern="return_main_menu"))
