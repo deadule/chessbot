@@ -86,7 +86,7 @@ async def handle_payment_step(update: Update, context):
 
     # Create payment and get the confirmation URL
     user_id = query.from_user.id
-    confirmation_url, payment_id = await create_first_payment_with_saving(user_id, 10.00)  # Fixed amount of 100 RUB
+    confirmation_url, payment_id = await create_first_payment_with_saving(user_id)  # Fixed amount of 100 RUB
 
     if confirmation_url:
         # Send the payment link
