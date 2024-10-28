@@ -3,7 +3,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 
 logger = logging.getLogger(__name__)
 
-# Handle the "Узнать свой Уровень" button
+# Handle the "Узнать свой Уровень" butto
 async def handle_find_level(update: Update, context):
     query = update.callback_query
     await query.answer()
