@@ -6,23 +6,20 @@ from auth_handler import confirm_payment
 Configuration.account_id = '470344'
 Configuration.secret_key = 'test_5HI6B6ul3M6PL7B09L2-T5xyeQZDkEt93zetnnAE4zE'
 
-# Define a fixed amount for payments
-fixed_amount = 10.00  # Fixed amount for both initial and recurring payments (10.00 RUB)
+fixed_amount = 10.00  # Set the fixed amount for both initial and recurring payments
 
-# Create the first payment with external confirmation and save the payment method
+# Create the first payment with saving payment method enabled
 async def create_first_payment_with_saving(user_id):
-    """
-    Create the first payment using external confirmation and save the payment method for future recurring payments.
-    """
     try:
         # Create the first payment with save_payment_method set to True
         payment = Payment.create({
             "amount": {
-                "value": f"{fixed_amount:.2f}",  # Set the fixed amount for the first payment
+                "value": f"{fixed_amount:.2f}",
                 "currency": "RUB"
             },
             "confirmation": {
-                "type": "external"  # External confirmation, user confirms via SMS or bank app
+                "type": "redirect",
+                "return_url": f"http://shahimatetokruto.ru"  # Replace with actual return URL
             },
             "capture": True,  # Immediately capture the payment
             "description": f"First payment for User {user_id}",
@@ -32,24 +29,21 @@ async def create_first_payment_with_saving(user_id):
             }
         }, uuid.uuid4())
 
-        # Extract payment ID
+        # Extract confirmation URL and payment ID
+        confirmation_url = payment.confirmation.confirmation_url
         payment_id = payment.id  # Save this for status checking and recurring payments
-
-        return payment_id  # No URL needed for external confirmation
+        return confirmation_url, payment_id
     except Exception as e:
-        print(f"Error creating payment: {e}")
-        return None
+        print(f"Error creating first payment: {e}")
+        return None, None
 
 # Create a recurring payment using the saved payment method
 async def create_recurring_payment(payment_method_id, user_id):
-    """
-    Create a recurring payment using the saved payment method.
-    """
     try:
         # Create a payment using the saved payment method ID
         payment = Payment.create({
             "amount": {
-                "value": f"{fixed_amount:.2f}",  # Set the fixed amount for recurring payments
+                "value": f"{fixed_amount:.2f}",
                 "currency": "RUB"
             },
             "capture": True,  # Immediately capture the payment
@@ -68,59 +62,19 @@ async def create_recurring_payment(payment_method_id, user_id):
         print(f"Error creating recurring payment: {e}")
         return False
 
-# Check payment method saved status and extract payment_method_id
-async def check_payment_status(payment_id):
-    """
-    Check the payment status and extract payment_method_id if payment is successful and the method is saved.
-    """
-    try:
-        payment = Payment.find_one(payment_id)
-
-        # Check if the payment method was saved
-        if payment.payment_method.saved:
-            payment_method_id = payment.payment_method.id
-            print(f"Saved payment method ID: {payment_method_id}")
-            return payment_method_id
-        else:
-            print(f"Payment method was not saved.")
-            return None
-    except Exception as e:
-        print(f"Error checking payment status: {e}")
-        return None
-
-# Function to confirm the payment and authorize the user
+# Function to handle payment confirmation
 async def handle_payment_confirmation(payment_id, user_id):
-    """
-    Handle payment confirmation by checking the payment status and authorizing the user if the payment is successful.
-    """
     try:
         payment = Payment.find_one(payment_id)
 
         # Check if the payment was successful
         if payment.status == "succeeded":
             print(f"Payment for User {user_id} succeeded!")
-
-            # Update the user's authorization status to True in the database
-            confirm_payment(user_id)
-            
+            update_authorization_status(user_id, True)  # Authorize user in the database
             return True
         else:
             print(f"Payment for User {user_id} failed with status: {payment.status}")
             return False
     except Exception as e:
         print(f"Error confirming payment for User {user_id}: {e}")
-        return False
-
-# Cancel a recurring payment
-async def cancel_recurring_payment(payment_method_id, user_id):
-    """
-    Cancel the recurring payment by invalidating the saved payment method.
-    """
-    try:
-        # There isn't a specific API method to cancel the payment method in ЮKassa, but you can stop using the payment_method_id
-        # You can also record this cancellation in your own database to prevent further payments
-        print(f"User {user_id}'s subscription has been canceled. Payment method ID {payment_method_id} is no longer used.")
-        return True
-    except Exception as e:
-        print(f"Error canceling subscription for User {user_id}: {e}")
         return False
