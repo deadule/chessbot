@@ -19,6 +19,12 @@ jobs:
           yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
 
       - run: docker compose build
+
+      - name: 'Create .env file'
+        run: |
+          touch .env
+          echo 'TELEGRAM_TOKEN=${{ secrets.TELEGRAM_TOKEN }}' >> .env
+
       - run: docker compose push
 
       - name: Install SSH key
@@ -35,4 +41,5 @@ jobs:
           stack deploy
           --compose-file compose.yml
           --detach=false
+          --with-registry-auth
           chessbot

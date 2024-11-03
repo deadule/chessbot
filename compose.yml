@@ -14,9 +14,10 @@ services:
     build:
       context: .
       dockerfile: bot.Dockerfile
+    env_file:
+      - .env
     environment:
-      USERS_DB_PATH: /data/users.db
-      TELEGRAM_TOKEN: $TELEGRAM_TOKEN
+      - USERS_DB_PATH=/data/users.db
     volumes:
       - /opt/chessbot/bot:/data:rw
 
