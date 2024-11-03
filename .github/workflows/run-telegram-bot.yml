@@ -1,46 +1,38 @@
-name: Run Telegram Bot
+name: Deploy Telegram bot
 
 on:
   push:
-    branches:
-      - main  # Trigger the workflow on push to the main branch
+# branches:
+#   - main  # Trigger the workflow on push to the main branch
 
 jobs:
-  run-bot:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Login to Yandex Cloud Container Registry
+        uses: yc-actions/yc-cr-login@v2
         with:
-          python-version: '3.8'  # Use the version you need (e.g., '3.9')
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
 
-      - name: Install dependencies
-        run: |
-          pip install python-telegram-bot==20.3
-          pip install yookassa
+      - run: docker compose build
+      - run: docker compose push
 
-      - name: Run Telegram Bot
-        run: |
-          python bot.py 2>&1 | tee bot.log  
-        # Run bot and display logs in real-time while also saving to bot.log
-        continue-on-error: true  # Continue the workflow even if the bot encounters an error
-
-      - name: Keep the job running
-        run: sleep infinity  # Keep the workflow running indefinitely
-
-      - name: Upload logs
-        if: failure()  # Upload logs if the workflow fails
-        uses: actions/upload-artifact@v3
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
         with:
-          name: bot-log
-          path: bot.log  # Upload the bot log file as an artifact
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          name: id_ed25519
+          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
 
-      - name: Share log link
-        if: failure()  # Only show this link if the workflow fails
-        run: |
-          echo "The bot log is available at this link:"
-          echo "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#artifact"
+      - name: Deploy
+        run: >
+          docker
+          --host ssh://root@shahimatetokruto.ru
+          stack deploy
+          --compose-file compose.yml
+          --detach=false
+          chessbot
