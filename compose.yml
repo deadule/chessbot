@@ -1,13 +1,13 @@
-# docker compose build
-# docker compose push
-# docker --host ssh://root@130.193.45.17 stack deploy --compose-file compose.yml chessbot --resolve-image never --detach=false
-
 services:
   web-server:
     image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/web-server:latest
     build:
       context: .
       dockerfile: web-server.Dockerfile
+    deploy:
+      update_config:
+        order: start-first
+        failure_action: rollback
 
   bot:
     image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/bot:latest
@@ -20,6 +20,10 @@ services:
       - USERS_DB_PATH=/data/users.db
     volumes:
       - /opt/chessbot/bot:/data:rw
+    deploy:
+      update_config:
+        order: stop-first
+        failure_action: rollback
 
   caddy:
     image: caddy:2.8.4-alpine
@@ -36,6 +40,10 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    deploy:
+      update_config:
+        order: start-first
+        failure_action: rollback
 
 configs:
   Caddyfile:
