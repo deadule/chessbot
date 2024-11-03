@@ -1,0 +1,36 @@
+{
+  email letsencrypt@nitive.me
+  servers :80,:443 {
+    protocols h1 h2c
+  }
+}
+
+(security_headers) {
+    header * {
+        # disable clients from sniffing the media type
+        # https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html#x-content-type-options
+        X-Content-Type-Options "nosniff"
+
+        # clickjacking protection
+        # https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html#x-frame-options
+        X-Frame-Options "SAMEORIGIN"
+
+        # xss protection
+        # https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html#x-xss-protection
+        X-XSS-Protection "1; mode=block"
+
+        # Remove -Server header, which is an information leak
+        # Remove Caddy from Headers
+        -Server
+
+        # keep referrer data off of HTTP connections
+        # https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html#referrer-policy
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+}
+
+:80, shahimatetokruto.ru:443 {
+    import security_headers
+
+    reverse_proxy /* chessbot_web-server:5000
+}

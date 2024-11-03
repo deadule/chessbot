@@ -1,8 +1,41 @@
+# docker compose build
+# docker compose push
+# docker --host ssh://root@130.193.45.17 stack deploy --compose-file compose.yml chessbot --resolve-image never --detach=false
+
 services:
   web-server:
-    # image: 127.0.0.1:5000/stackdemo
+    image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/web-server:latest
     build:
       context: .
       dockerfile: web-server.Dockerfile
+
+  bot:
+    image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/bot:latest
+    build:
+      context: .
+      dockerfile: bot.Dockerfile
+    environment:
+      USERS_DB_PATH: /data/users.db
+      TELEGRAM_TOKEN: $TELEGRAM_TOKEN
+    volumes:
+      - /opt/chessbot/bot:/data:rw
+
+  caddy:
+    image: caddy:2.8.4-alpine
+    command:
+      - caddy
+      - run
+      - --config=/Caddyfile
+      - --adapter
+      - caddyfile
+    volumes:
+      - /opt/chessbot/caddy:/data
+    configs:
+      - Caddyfile
     ports:
-      - "5000:5000"
+      - "80:80"
+      - "443:443"
+
+configs:
+  Caddyfile:
+    file: ./Caddyfile

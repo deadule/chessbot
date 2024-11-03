@@ -3,7 +3,7 @@ import os
 from telegram import Update
 
 # Define the database path
-DB_PATH = "users.db"
+DB_PATH = os.getenv("USERS_DB_PATH", "users.db")
 
 # Initialize the database and create the users table if it doesn't exist
 def init_db():
