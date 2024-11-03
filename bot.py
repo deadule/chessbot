@@ -113,7 +113,6 @@ async def handle_payment_confirmation(update: Update, context):
         logger.info(f"User {query.from_user.id} is authorized after payment, proceeding to level selection.")
         # Proceed to level selection or course content
         await query.message.reply_text("You now have access to the course content!")
-    else:
         logger.warning(f"Authorization failed for user {query.from_user.id}.")
         
         # Creating buttons for level selection, plus a return button
@@ -126,7 +125,7 @@ async def handle_payment_confirmation(update: Update, context):
         reply_markup = InlineKeyboardMarkup(level_kb)
         
         # Send the level selection message
-        await query.message.reply_text("Payment successful! Now choose your level:", reply_markup=reply_markup)
+        await query.message.reply_text("Choose your level:", reply_markup=reply_markup)
     else:
         logger.error(f"User {query.from_user.id} could not be authorized after payment.")
         await query.message.reply_text("Authorization failed. Please try again.")
