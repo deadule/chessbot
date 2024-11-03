@@ -212,31 +212,36 @@ async def return_main_menu_handler(update: Update, context):
     except Exception as e:
         logger.error(f"Error in return_main_menu_handler: {e}")
 
+
+def start_tg_bot():
+    # Initialize the database for authorization
+    init_db()
+    application = Application.builder().token(TOKEN).build()
+    logger.info("Bot is starting...")
+
+    # Add command and callback handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(lets_try_handler, pattern="lets_try"))
+    application.add_handler(CallbackQueryHandler(handle_payment_step, pattern="proceed_payment"))
+    application.add_handler(CallbackQueryHandler(handle_payment_confirmation, pattern="payment_confirmation"))
+    application.add_handler(CallbackQueryHandler(level_handler, pattern="level_"))
+    application.add_handler(CallbackQueryHandler(quality_handler, pattern="quality_"))
+    application.add_handler(CallbackQueryHandler(return_main_menu_handler, pattern="return_main_menu"))
+
+    # Import and add separate handlers for additional buttons
+    application.add_handler(CallbackQueryHandler(handle_sample_video, pattern="sample_video"))
+    application.add_handler(CallbackQueryHandler(handle_video_level_selection, pattern="sample_level_"))
+    application.add_handler(CallbackQueryHandler(handle_find_level, pattern="find_level"))
+
+    # Start polling for updates
+    logger.info("Bot started. Now polling for updates.")
+    application.run_polling()
+
+
 # Main function to start the bot and handlers
 def main():
     try:
-        # Initialize the database for authorization
-        init_db()
-        application = Application.builder().token(TOKEN).build()
-        logger.info("Bot is starting...")
-
-        # Add command and callback handlers
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CallbackQueryHandler(lets_try_handler, pattern="lets_try"))
-        application.add_handler(CallbackQueryHandler(handle_payment_step, pattern="proceed_payment"))
-        application.add_handler(CallbackQueryHandler(handle_payment_confirmation, pattern="payment_confirmation"))
-        application.add_handler(CallbackQueryHandler(level_handler, pattern="level_"))
-        application.add_handler(CallbackQueryHandler(quality_handler, pattern="quality_"))
-        application.add_handler(CallbackQueryHandler(return_main_menu_handler, pattern="return_main_menu"))
-
-        # Import and add separate handlers for additional buttons
-        application.add_handler(CallbackQueryHandler(handle_sample_video, pattern="sample_video"))
-        application.add_handler(CallbackQueryHandler(handle_video_level_selection, pattern="sample_level_"))
-        application.add_handler(CallbackQueryHandler(handle_find_level, pattern="find_level"))
-
-        # Start polling for updates
-        logger.info("Bot started. Now polling for updates.")
-        application.run_polling()
+        start_tg_bot()
     except Exception as e:
         logger.error(f"Error in main function: {e}")
 

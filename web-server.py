@@ -14,5 +14,9 @@ def yookassa_webhook():
         return jsonify({"status": "success"}), 200
     return jsonify({"status": "ignored"}), 200
 
+@app.route('/', methods=['GET'])
+def main():
+    return "it works"
+
 if __name__ == '__main__':
     app.run(port=5000)
