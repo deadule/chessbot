@@ -31,6 +31,11 @@ def start_tg_bot(token: str):
         last_contact=datetime.datetime.now(),
         lichess_rating=1900
     )
+    import time
+    time.sleep(0.5)
+    rep_chess_db.update_user_name(telegram_id=1000, name="NO Максим")
+    time.sleep(0.5)
+    rep_chess_db.update_user_chesscom_rating(telegram_id=1000, chesscom_rating=1600)
     print(rep_chess_db.get_user_on_telegram_id(1000))
 
 

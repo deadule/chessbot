@@ -91,6 +91,48 @@ class RepChessDB:
                  rep_rating)
             )
 
+    def update_user_name(self, telegram_id: int, name: str):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET name = ?, last_contact = ? WHERE telegram_id = ?""",
+                (name, datetime.datetime.now(), telegram_id)
+            )
+
+    def update_user_surname(self, telegram_id: int, surname: str):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET surname = ?, last_contact = ? WHERE telegram_id = ?""",
+                (surname, datetime.datetime.now(), telegram_id)
+            )
+
+    def update_user_lichess_rating(self, telegram_id: int, lichess_rating: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET lichess_rating = ?, last_contact = ? WHERE telegram_id = ?""",
+                (lichess_rating, datetime.datetime.now(), telegram_id)
+            )
+
+    def update_user_chesscom_rating(self, telegram_id: int, chesscom_rating: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET chesscom_rating = ?, last_contact = ? WHERE telegram_id = ?""",
+                (chesscom_rating, datetime.datetime.now(), telegram_id)
+            )
+
+    def update_user_rep_rating(self, telegram_id: int, rep_rating: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET rep_rating = ?, last_contact = ? WHERE telegram_id = ?""",
+                (rep_rating, datetime.datetime.now(), telegram_id)
+            )
+
+    def update_user_last_contact(self, telegram_id: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET last_contact = ? WHERE telegram_id = ?""",
+                (datetime.datetime.now(), telegram_id)
+            )
+
     def get_user_on_telegram_id(self, telegram_id: int) -> dict:
         with self.conn:
             cursor = self.conn.execute(
