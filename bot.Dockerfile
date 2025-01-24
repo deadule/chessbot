@@ -11,4 +11,4 @@ RUN poetry config virtualenvs.in-project true && \
 
 COPY ./ ./
 
-CMD ["poetry", "run", "python", "/app/bot.py"]
+CMD ["poetry", "run", "python", "/app/main/bot.py"]

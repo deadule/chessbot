@@ -1,11 +1,15 @@
 import logging
+import os
+import sys
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler
-from config import TOKEN
-from sample_video_handler import handle_sample_video, handle_video_level_selection
-from payment_handler import create_first_payment_with_saving, handle_payment_confirmation
-from auth_handler import init_db, handle_authorization 
-from find_level_handler import handle_find_level
+from databaseAPI import rep_chess_db
+
+#from config import TOKEN
+#from sample_video_handler import handle_sample_video, handle_video_level_selection
+#from payment_handler import create_first_payment_with_saving, handle_payment_confirmation
+#from find_level_handler import handle_find_level
 
 # Configure logging
 logging.basicConfig(
@@ -215,7 +219,7 @@ async def return_main_menu_handler(update: Update, context):
 
 def start_tg_bot():
     # Initialize the database for authorization
-    init_db()
+    """
     application = Application.builder().token(TOKEN).build()
     logger.info("Bot is starting...")
 
@@ -236,10 +240,14 @@ def start_tg_bot():
     # Start polling for updates
     logger.info("Bot started. Now polling for updates.")
     application.run_polling()
-
+    """
 
 # Main function to start the bot and handlers
 def main():
+    telegram_token_path = os.getenv("REPCHESS_DB_PATH")
+    if not telegram_token_path:
+        logger.error("Can't find path to telegram token!")
+        print("Please set REPCHESS_TELEGRAM_BOT_TOKEN variable.")
     try:
         start_tg_bot()
     except Exception as e:
