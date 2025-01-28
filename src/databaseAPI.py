@@ -5,6 +5,11 @@ import os
 import sys
 
 logger = logging.getLogger(__name__)
+logfile_dir = os.getenv("REPCHESS_LOG_PATH")
+logger_handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
+logger_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s : %(levelname)s: %(message)s"))
+logger.addHandler(logger_handler)
+logger.propagate = False
 
 sqlite3.register_adapter(datetime.datetime, lambda date: date.isoformat())
 sqlite3.register_converter("datetime", lambda date: datetime.datetime.fromisoformat(date.decode()))
@@ -90,6 +95,7 @@ class RepChessDB:
                  chesscom_rating,
                  rep_rating)
             )
+        logger.debug(f"register user {telegram_id}, {name}, {surname}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating}")
 
     def update_user_name(self, telegram_id: int, name: str):
         with self.conn:
@@ -97,6 +103,7 @@ class RepChessDB:
                 """UPDATE user SET name = ?, last_contact = ? WHERE telegram_id = ?""",
                 (name, datetime.datetime.now(), telegram_id)
             )
+        logger.debug(f"update user name {telegram_id=}, {name=}")
 
     def update_user_surname(self, telegram_id: int, surname: str):
         with self.conn:
@@ -104,6 +111,7 @@ class RepChessDB:
                 """UPDATE user SET surname = ?, last_contact = ? WHERE telegram_id = ?""",
                 (surname, datetime.datetime.now(), telegram_id)
             )
+        logger.debug(f"update user surname {telegram_id=}, {surname=}")
 
     def update_user_lichess_rating(self, telegram_id: int, lichess_rating: int):
         with self.conn:
@@ -111,6 +119,7 @@ class RepChessDB:
                 """UPDATE user SET lichess_rating = ?, last_contact = ? WHERE telegram_id = ?""",
                 (lichess_rating, datetime.datetime.now(), telegram_id)
             )
+        logger.debug(f"update lichess rating {telegram_id=}, {lichess_rating=}")
 
     def update_user_chesscom_rating(self, telegram_id: int, chesscom_rating: int):
         with self.conn:
@@ -118,6 +127,7 @@ class RepChessDB:
                 """UPDATE user SET chesscom_rating = ?, last_contact = ? WHERE telegram_id = ?""",
                 (chesscom_rating, datetime.datetime.now(), telegram_id)
             )
+        logger.debug(f"update chesscom_rating {telegram_id=}, {chesscom_rating=}")
 
     def update_user_rep_rating(self, telegram_id: int, rep_rating: int):
         with self.conn:
@@ -125,6 +135,7 @@ class RepChessDB:
                 """UPDATE user SET rep_rating = ?, last_contact = ? WHERE telegram_id = ?""",
                 (rep_rating, datetime.datetime.now(), telegram_id)
             )
+        logger.debug(f"update rep rating {telegram_id=}, {rep_rating=}")
 
     def update_user_last_contact(self, telegram_id: int):
         with self.conn:
@@ -132,6 +143,7 @@ class RepChessDB:
                 """UPDATE user SET last_contact = ? WHERE telegram_id = ?""",
                 (datetime.datetime.now(), telegram_id)
             )
+        logger.debug(f"update user last contact {telegram_id=}")
 
     def get_user_on_telegram_id(self, telegram_id: int) -> dict:
         with self.conn:

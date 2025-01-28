@@ -6,16 +6,16 @@ import sys
 from databaseAPI import rep_chess_db
 
 # Configure logging
-logfile_path = os.getenv("REPCHESS_LOG_PATH")
-if not logfile_path:
-    print("Error: Can't find path to logfile.")
+logfile_dir = os.getenv("REPCHESS_LOG_PATH")
+if not logfile_dir:
+    print("Error: Can't find path to log directory.")
     print("Please set REPCHESS_LOG_PATH variable.")
     sys.exit(1)
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s %(name)s : %(levelname)s: %(message)s",
     level=logging.DEBUG,  # Set to DEBUG for detailed output
     handlers=[
-        logging.FileHandler(logfile_path),  # Save logs to a file
+        logging.FileHandler(os.path.join(logfile_dir, "bot.log")),  # Save logs to a file
         logging.StreamHandler()  # Output logs to console
     ]
 )
@@ -56,12 +56,13 @@ def main():
         token = f.readline()
 
     # Start bot
-    # TODO: enable try-catch block in future
-    #try:
-    start_tg_bot(token)
-    #except Exception as e:
-    #    logger.error(f"Error in main function: {e}")
-    #    sys.exit(1)
+    try:
+        start_tg_bot(token)
+    except Exception as e:
+        logger.error(f"Error in main function: {e}", exc_info=True)
 
-if __name__ == '__main__':
+    logger.info("Bot successfully started")
+
+
+if __name__ == "__main__":
     main()
