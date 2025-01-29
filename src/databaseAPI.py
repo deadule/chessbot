@@ -9,6 +9,7 @@ logfile_dir = os.getenv("REPCHESS_LOG_PATH")
 logger_handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
 logger_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s : %(levelname)s: %(message)s"))
 logger.addHandler(logger_handler)
+logger.setLevel(logging.DEBUG)
 logger.propagate = False
 
 sqlite3.register_adapter(datetime.datetime, lambda date: date.isoformat())
@@ -70,11 +71,14 @@ class RepChessDB:
         last_contact: datetime.datetime | None = None,
         lichess_rating: int | None = None,
         chesscom_rating: int | None = None,
-        rep_rating: int = 1700,
+        rep_rating: int = 1600,
     ):
+        """
+        Register user if user with given telegram_id doesn't exist.
+        """
         with self.conn:
             self.conn.execute(
-                """INSERT INTO user (
+                """INSERT OR IGNORE INTO user (
                     user_id,
                     telegram_id,
                     name,
@@ -89,7 +93,7 @@ class RepChessDB:
                  telegram_id,
                  name,
                  surname,
-                 first_contact,
+                 first_contact if first_contact else datetime.datetime.now(),
                  last_contact,
                  lichess_rating,
                  chesscom_rating,
