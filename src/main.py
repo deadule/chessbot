@@ -2,12 +2,11 @@ import logging
 import os
 import sys
 
-from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, Update, KeyboardButton
+from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
     ContextTypes,
-    CallbackQueryHandler,
     MessageHandler,
     filters,
 )

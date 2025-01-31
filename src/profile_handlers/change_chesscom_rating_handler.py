@@ -1,16 +1,5 @@
-import logging
-import os
-import sys
-
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, ForceReply
-from telegram.ext import (
-    ApplicationBuilder,
-    ConversationHandler,
-    ContextTypes,
-    CallbackQueryHandler,
-    MessageHandler,
-    filters,
-)
+from telegram import Update
+from telegram.ext import ContextTypes, CallbackQueryHandler
 
 from databaseAPI import rep_chess_db
 from main_menu_handler import main_menu_handler
