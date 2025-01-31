@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath(os.path.join("src", "profile_handlers")))
 
 
 from databaseAPI import rep_chess_db
-from profile_handlers import profile_handlers
+from profile_handlers import profile_callback_handlers
 
 
 # Configure logging
@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 main_menu_reply_keyboard = ReplyKeyboardMarkup(
     [
-        [KeyboardButton("🙾 Расписание")],
+        [KeyboardButton("🙾  Расписание")],
         [KeyboardButton("👤 Профиль")],
     ],
     resize_keyboard=True
@@ -56,11 +56,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"Привет, {name}!", reply_markup=main_menu_reply_keyboard)
 
 
+async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    For flexibility we have to process all text messages from user here and
+    transfer it to suitable handlers. The current function for processing update
+    is in context.user_data["state"]. If state = None, we can ignore message.
+    """
+    if "state" not in context.user_data:
+        context.user_data["state"] = None
+
+    if context.user_data["state"] == None:
+        # this is useless message from user. It is not some answer for handlers.
+        logger.info(f"IGNORE MESSAGE {update.message.text}")
+        return
+
+    await context.user_data["state"](update, context)
+
+
 def start_tg_bot(token: str):
     application = ApplicationBuilder().token(token).build()
 
     application.add_handler(CommandHandler("start", start))
-    application.add_handlers(profile_handlers)
+    application.add_handlers(profile_callback_handlers)
+    application.add_handler(MessageHandler(filters.ALL, global_message_handler))
 
     # never return
     application.run_polling()

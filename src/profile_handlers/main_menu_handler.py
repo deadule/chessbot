@@ -16,10 +16,10 @@ from databaseAPI import rep_chess_db
 
 
 profile_inline_keyboard = InlineKeyboardMarkup([
-    [InlineKeyboardButton("Имя", callback_data="profile_name")],
-    [InlineKeyboardButton("Фамилия", callback_data="profile_surname")],
-    [InlineKeyboardButton("рейтинг lichess", callback_data="profile_lichess_rating")],
-    [InlineKeyboardButton("рейтинг chess.com", callback_data="profile_chesscom_rating")],
+    [InlineKeyboardButton("📝  Имя", callback_data="profile_name")],
+    [InlineKeyboardButton("📝  Фамилия", callback_data="profile_surname")],
+    [InlineKeyboardButton("♞  Рейтинг lichess", callback_data="profile_lichess_rating")],
+    [InlineKeyboardButton("♟️  Рейтинг chess.com", callback_data="profile_chesscom_rating")],
 ])
 
 
@@ -51,10 +51,12 @@ async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if "user_db_data" not in context.user_data:
         context.user_data["user_db_data"] = user_db_data
 
+    # Delete saved state because here we already don't expect that useful user message will come.
+    context.user_data["state"] = None
+
     # Delete useless messages about correcting some data
     if "messages_to_delete" in context.user_data:
-        for message_id in context.user_data["messages_to_delete"]:
-            await context.bot.delete_message(update.effective_chat.id, message_id)
+        await context.bot.delete_messages(update.effective_chat.id, context.user_data["messages_to_delete"])
     context.user_data["messages_to_delete"] = []
 
     profile_str = construct_profile_message(user_db_data)

@@ -16,38 +16,37 @@ from databaseAPI import rep_chess_db
 from main_menu_handler import main_menu_handler
 
 
-PROFILE_INPUT_NAME = 1
-
-
-async def change_name_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        query = update.callback_query
-        await query.answer()
-
-        context.user_data["messages_to_delete"].append(query.message.message_id + 1)
-
-        await context.bot.send_message(update.effective_chat.id, "Введите новое имя:")
-        return PROFILE_INPUT_NAME
-
-
 async def process_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = update.message.text
     # Too long name
     if len(name) > 100:
-        context.user_data["messages_to_delete"].extend([update.message.message_id, update.message.message_id + 1])
-        await update.message.reply_text("Странное имя. Попробуйте покороче:")
-        return await change_name_handler(update, context)
+        message = await update.message.reply_text("Странное имя\. Попробуйте покороче\.")
+        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
+        await change_name_handler(update, context)
+        return
 
     context.user_data["name"] = name
+    context.user_data["state"] = None
     rep_chess_db.update_user_name(update.message.from_user.id, name)
 
     context.user_data["messages_to_delete"].append(update.message.message_id)
     # Output updated profile
     await main_menu_handler(update, context)
-    return ConversationHandler.END
 
 
-profile_change_name_handler = ConversationHandler(
-    [CallbackQueryHandler(change_name_handler, pattern="profile_name")],
-    {PROFILE_INPUT_NAME: [MessageHandler(filters.ALL, process_input_name)]},
-    [],
+async def change_name_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    if query:
+        await query.answer()
+
+    # save handler for text message
+    context.user_data["state"] = process_input_name
+
+    message = await context.bot.send_message(update.effective_chat.id, "*Введите имя:*", parse_mode="MarkdownV2")
+    context.user_data["messages_to_delete"].append(message.message_id)
+
+
+profile_change_name_handler = CallbackQueryHandler(
+    change_name_handler,
+    pattern="profile_name",
 )
