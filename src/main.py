@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 main_menu_reply_keyboard = ReplyKeyboardMarkup(
     [
-        [KeyboardButton("🩎🙾♟️ Расписание")],
+        [KeyboardButton("🙾 Расписание")],
         [KeyboardButton("👤 Профиль")],
     ],
     resize_keyboard=True

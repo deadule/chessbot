@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 
+
 logger = logging.getLogger(__name__)
 logfile_dir = os.getenv("REPCHESS_LOG_PATH")
 logger_handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
@@ -12,9 +13,12 @@ logger.addHandler(logger_handler)
 logger.setLevel(logging.DEBUG)
 logger.propagate = False
 
+
 sqlite3.register_adapter(datetime.datetime, lambda date: date.isoformat())
 sqlite3.register_converter("datetime", lambda date: datetime.datetime.fromisoformat(date.decode()))
 
+
+# TODO: maybe rewrite it with sqlalchemy
 class RepChessDB:
     """
     Managing all DB-related stuff.
@@ -34,6 +38,7 @@ class RepChessDB:
         # No need to connect() and close() at every transaction,
         # because this file won't run from multiple threads.
         self.conn = sqlite3.connect(db_path)
+        self.conn.row_factory = sqlite3.Row
 
         with self.conn:
             # TODO: add other tables
@@ -155,6 +160,7 @@ class RepChessDB:
                 """SELECT * FROM user WHERE user.telegram_id == ?""", (telegram_id,)
             )
             result = cursor.fetchone()
-        return result
+        return dict(result)
+
 
 rep_chess_db = RepChessDB()
