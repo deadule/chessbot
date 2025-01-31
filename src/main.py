@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.abspath("src"))
 sys.path.insert(0, os.path.abspath(os.path.join("src", "profile_handlers")))
 
 
+from start import start
 from databaseAPI import rep_chess_db
 from profile_handlers import profile_callback_handlers
 
@@ -37,23 +38,6 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-
-
-main_menu_reply_keyboard = ReplyKeyboardMarkup(
-    [
-        [KeyboardButton("🙾  Расписание")],
-        [KeyboardButton("👤 Профиль")],
-    ],
-    resize_keyboard=True
-)
-
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    name = update.message.from_user.first_name
-    # Register user if it doesn't exist
-    rep_chess_db.register_user(update.message.from_user.id, name=name)
-    # Greeting message and ReplyKeyboard options
-    await update.message.reply_text(f"Привет, {name}!", reply_markup=main_menu_reply_keyboard)
 
 
 async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
