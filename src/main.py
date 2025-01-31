@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.abspath(os.path.join("src", "profile_handlers")))
 from start import start
 from databaseAPI import rep_chess_db
 from profile_handlers import profile_callback_handlers
+from timetable_handlers.timetable_handlers import timetable_callback_handlers
 
 
 # Configure logging
@@ -61,6 +62,7 @@ def start_tg_bot(token: str):
 
     application.add_handler(CommandHandler("start", start))
     application.add_handlers(profile_callback_handlers)
+    application.add_handlers(timetable_callback_handlers)
     application.add_handler(MessageHandler(filters.ALL, global_message_handler))
 
     # never return
