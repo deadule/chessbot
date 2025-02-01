@@ -24,10 +24,10 @@ from timetable_handlers.timetable_handlers import timetable_callback_handlers
 
 
 # Configure logging
-logfile_dir = os.getenv("REPCHESS_LOG_PATH")
+logfile_dir = os.getenv("REPCHESS_LOG_DIR")
 if not logfile_dir:
     print("Error: Can't find path to log directory.")
-    print("Please set REPCHESS_LOG_PATH variable.")
+    print("Please set REPCHESS_LOG_DIR variable.")
     sys.exit(1)
 logging.basicConfig(
     format="%(asctime)s %(name)s : %(levelname)s: %(message)s",

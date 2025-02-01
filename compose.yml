@@ -17,7 +17,8 @@ services:
     env_file:
       - .env
     environment:
-      - USERS_DB_PATH=/data/users.db
+      - REPCHESS_DB_PATH=/data/users.db
+      - REPCHESS_LOG_DIR=/data
     volumes:
       - /opt/chessbot/bot:/data:rw
     deploy:
