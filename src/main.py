@@ -48,8 +48,10 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
     transfer it to suitable handlers. The current function for processing update
     is in context.user_data["state"]. If state = None, we can ignore message.
     """
-    if "state" not in context.user_data:
-        context.user_data["state"] = None
+    if not context.user_data or "state" not in context.user_data:
+        # this is useless message from user. It is not some answer for handlers.
+        logger.info(f"IGNORE MESSAGE {update.message.text}")
+        return
 
     if context.user_data["state"] == None:
         # this is useless message from user. It is not some answer for handlers.
