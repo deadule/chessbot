@@ -33,6 +33,7 @@ admin_inline_keyboard = InlineKeyboardMarkup([
 async def admin_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     telegram_id = update.message.from_user.id if update.message else update.callback_query.from_user.id
 
+    rep_chess_db.update_user_last_contact(telegram_id)
     is_admin = any((rep_chess_db.is_admin(telegram_id), telegram_id == SUPER_ADMIN_ID))
 
     if not is_admin:

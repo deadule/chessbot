@@ -41,7 +41,9 @@ def construct_profile_message(user_db_data: dict) -> str:
 
 
 async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_db_data = rep_chess_db.get_user_on_telegram_id(update.message.from_user.id)
+    telegram_id = update.message.from_user.id
+    user_db_data = rep_chess_db.get_user_on_telegram_id(telegram_id)
+    rep_chess_db.update_user_last_contact(telegram_id)
 
     # Add user data in cache to not make query to database every time
     if "user_db_data" not in context.user_data:
