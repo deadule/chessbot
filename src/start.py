@@ -6,7 +6,7 @@ from databaseAPI import rep_chess_db
 
 main_menu_reply_keyboard = ReplyKeyboardMarkup(
     [
-        [KeyboardButton("🙾  Расписание")],
+        [KeyboardButton("📅  Расписание")],
         [KeyboardButton("👤 Профиль")],
     ],
     resize_keyboard=True

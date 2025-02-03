@@ -15,10 +15,12 @@ from telegram.ext import (
 # Add to python path some directories
 sys.path.insert(0, os.path.abspath("src"))
 sys.path.insert(0, os.path.abspath(os.path.join("src", "profile_handlers")))
+sys.path.insert(0, os.path.abspath(os.path.join("src", "admin_handlers")))
 
 
 from start import start
 from databaseAPI import rep_chess_db
+from admin_handlers import admin_callback_handlers
 from profile_handlers import profile_callback_handlers
 from timetable_handlers.timetable_handlers import timetable_callback_handlers
 
@@ -61,6 +63,7 @@ def start_tg_bot(token: str):
     application = ApplicationBuilder().token(token).build()
 
     application.add_handler(CommandHandler("start", start))
+    application.add_handlers(admin_callback_handlers)
     application.add_handlers(profile_callback_handlers)
     application.add_handlers(timetable_callback_handlers)
     application.add_handler(MessageHandler(filters.ALL, global_message_handler))

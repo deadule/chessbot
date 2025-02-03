@@ -49,6 +49,7 @@ class RepChessDB:
                 CREATE TABLE IF NOT EXISTS user (
                     user_id INTEGER PRIMARY KEY,
                     telegram_id INTEGER UNIQUE NOT NULL,
+                    is_admin BOOL,
                     name TEXT,
                     surname TEXT,
                     first_contact TEXT,
@@ -70,6 +71,7 @@ class RepChessDB:
     def register_user(
         self,
         telegram_id: int,
+        is_admin: bool = False,
         name: str | None = None,
         surname: str | None = None,
         first_contact: datetime.datetime | None = None,
@@ -86,6 +88,7 @@ class RepChessDB:
                 """INSERT OR IGNORE INTO user (
                     user_id,
                     telegram_id,
+                    is_admin,
                     name,
                     surname,
                     first_contact,
@@ -93,9 +96,10 @@ class RepChessDB:
                     lichess_rating,
                     chesscom_rating,
                     rep_rating
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (None,
                  telegram_id,
+                 is_admin,
                  name,
                  surname,
                  first_contact if first_contact else datetime.datetime.now(),
@@ -104,7 +108,7 @@ class RepChessDB:
                  chesscom_rating,
                  rep_rating)
             )
-        logger.debug(f"register user {telegram_id}, {name}, {surname}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating}")
+        logger.debug(f"register user {telegram_id}, {is_admin}, {name}, {surname}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating}")
 
     def update_user_name(self, telegram_id: int, name: str):
         with self.conn:
@@ -162,5 +166,63 @@ class RepChessDB:
             result = cursor.fetchone()
         return dict(result)
 
+    def is_admin(self, telegram_id: int) -> bool:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT is_admin FROM user WHERE user.telegram_id == ?""", (telegram_id,)
+            )
+        result = cursor.fetchone()
+        return bool(result)
+
+    def set_user_as_admin(self, user_id: int) -> str | None:
+        """
+        Return None if there is no user with 'user_id'.
+        Return "" - empty string if the user with 'user_id' already is admin.
+        Otherwise return users name + surname.
+        """
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM user WHERE user_id = ?""",
+                (user_id,)
+            )
+        user = cursor.fetchone()
+        if not user:
+            return None
+        user = dict(user)
+        if user["is_admin"] == True:
+            return ""
+
+        self.conn.execute(
+            """UPDATE user SET is_admin = ? WHERE user_id = ?""",
+            (True, user_id)
+        )
+        logger.debug(f"update user {user_id=} is_admin to True")
+        return user["name"] + " " + (user["surname"] if user["surname"] else "")
+
+    def remove_user_from_admins(self, user_id: int):
+        """
+        Return None if there is no user with 'user_id'.
+        Return "" - empty string if the user with 'user_id' already is admin.
+        Otherwise return users name + surname.
+        """
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM user WHERE user_id = ?""",
+                (user_id,)
+            )
+        user = cursor.fetchone()
+        if not user:
+            return None
+        user = dict(user)
+        if user["is_admin"] == False:
+            return ""
+
+        self.conn.execute(
+            """UPDATE user SET is_admin = ? WHERE user_id = ?""",
+            (False, user_id)
+        )
+
+        logger.debug(f"update user {user_id=} is_admin to False")
+        return user["name"] + " " + (user["surname"] if user["surname"] else "")
 
 rep_chess_db = RepChessDB()
