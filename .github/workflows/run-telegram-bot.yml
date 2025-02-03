@@ -35,6 +35,8 @@ jobs:
           name: id_ed25519
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
 
+      - run: docker swarm init
+
       - name: Deploy
         run: >
           docker
