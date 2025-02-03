@@ -3,8 +3,8 @@ name: Deploy Telegram bot
 on:
   push:
     branches:
-      - release
-      #- main  # Trigger the workflow on push to the main branch
+      #- release
+      - main  # Trigger the workflow on push to the main branch
 
 jobs:
   deploy:
@@ -34,8 +34,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           name: id_ed25519
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-
-      - run: docker swarm init
 
       - name: Deploy
         run: >
