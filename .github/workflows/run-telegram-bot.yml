@@ -3,7 +3,8 @@ name: Deploy Telegram bot
 on:
   push:
     branches:
-      - main  # Trigger the workflow on push to the main branch
+      - release
+      #- main  # Trigger the workflow on push to the main branch
 
 jobs:
   deploy:
