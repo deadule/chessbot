@@ -25,6 +25,8 @@ jobs:
         run: |
           touch .env
           echo 'REPCHESS_TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_TOKEN }}' >> .env
+          echo 'REPCHESS_LOG_DIR=/data'
+          echo 'REPCHESS_DB_PATH=/data/chess.db'
 
       - run: docker compose push
 
