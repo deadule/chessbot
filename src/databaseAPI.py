@@ -6,7 +6,7 @@ import sys
 
 
 logger = logging.getLogger(__name__)
-logfile_dir = os.getenv("REPCHESS_LOG_PATH")
+logfile_dir = os.getenv("REPCHESS_LOG_DIR")
 logger_handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
 logger_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s : %(levelname)s: %(message)s"))
 logger.addHandler(logger_handler)

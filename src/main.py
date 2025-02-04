@@ -92,20 +92,15 @@ def main():
     rep_chess_db.initialize()
 
     # Get telegram token
-    telegram_token_path = os.getenv("REPCHESS_TELEGRAM_BOT_TOKEN")
-    if not telegram_token_path:
+    telegram_token = os.getenv("REPCHESS_TELEGRAM_BOT_TOKEN")
+    if not telegram_token:
         logger.error("Can't find path to telegram token!")
         print("Please set REPCHESS_TELEGRAM_BOT_TOKEN variable.")
         sys.exit(1)
-    if not os.path.isfile(telegram_token_path):
-        logger.error("Can't find telegram token file!")
-        sys.exit(1)
-    with open(telegram_token_path, "r", encoding="utf-8") as f:
-        token = f.readline().strip()
 
     # Start bot
     try:
-        start_tg_bot(token)
+        start_tg_bot(telegram_token)
     except Exception as e:
         logger.error(f"Error in main function: {e}", exc_info=True)
 

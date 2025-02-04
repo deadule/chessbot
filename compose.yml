@@ -10,21 +10,21 @@ services:
 #        failure_action: rollback
 
   bot:
-    image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/bot:latest
+    #image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/bot:latest
     build:
       context: .
       dockerfile: bot.Dockerfile
     env_file:
       - .env
     environment:
-      - REPCHESS_DB_PATH=/data/users.db
+      - REPCHESS_DB_PATH=/data/chess.db
       - REPCHESS_LOG_DIR=/data
     volumes:
       - /opt/chessbot/bot:/data:rw
-    deploy:
-      update_config:
-        order: stop-first
-        failure_action: rollback
+    #deploy:
+    #  update_config:
+    #    order: stop-first
+    #    failure_action: rollback
 
 #  caddy:
 #    image: caddy:2.8.4-alpine
