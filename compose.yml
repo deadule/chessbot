@@ -21,10 +21,10 @@ services:
       - REPCHESS_LOG_DIR=/data
     volumes:
       - /opt/chessbot/bot:/data:rw
-    #deploy:
-    #  update_config:
-    #    order: stop-first
-    #    failure_action: rollback
+    deploy:
+      update_config:
+        order: stop-first
+        failure_action: rollback
 
 #  caddy:
 #    image: caddy:2.8.4-alpine

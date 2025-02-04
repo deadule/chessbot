@@ -38,11 +38,12 @@ jobs:
           known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
 
 
-      #- name: Deploy
-      #  run: >
-      #    docker
-      #    stack deploy
-      #    --compose-file compose.yml
-      #    --detach=false
-      #    --with-registry-auth
-      #    chessbot
+      - name: Deploy
+        run: >
+          docker
+          --host ssh://root@130.193.45.17
+          stack deploy
+          --compose-file compose.yml
+          --detach=false
+          --with-registry-auth
+          chessbot
