@@ -25,8 +25,6 @@ jobs:
         run: |
           touch .env
           echo 'REPCHESS_TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_TOKEN }}' >> .env
-          echo 'REPCHESS_LOG_DIR=/data' >> .env
-          echo 'REPCHESS_DB_PATH=/data/chess.db' >> .env
 
       - run: docker compose push
 
@@ -41,7 +39,7 @@ jobs:
       - name: Deploy
         run: >
           docker
-          --host ssh://root@130.193.45.17
+          --host ssh://root@shahimatetokruto.ru
           stack deploy
           --compose-file compose.yml
           --detach=false
