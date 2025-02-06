@@ -101,8 +101,13 @@ async def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_T
     if not tournament:
         await context.bot.send_message(update.effective_chat.id, "Пост не подходит под формат")
         return
-    tournament["tg_channel"] = update.message.forward_from_chat.username
-    tournament["message_id"] = update.message.forward_from_message_id
+
+    if update.message.api_kwargs:
+        tournament["tg_channel"] = update.message.api_kwargs["forward_from_chat"].username
+        tournament["message_id"] = update.message.api_kwargs["forward_from_message_id"]
+    else:
+        tournament["tg_channel"] = update.message.forward_from_chat.username
+        tournament["message_id"] = update.message.forward_from_message_id
 
     rep_chess_db.add_tournament(**tournament)
 
