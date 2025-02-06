@@ -1,4 +1,4 @@
-#services:
+services:
 #  web-server:
 #    image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/web-server:latest
 #    build:
