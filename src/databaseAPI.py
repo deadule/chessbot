@@ -54,27 +54,42 @@ class RepChessDB:
                 """
                 BEGIN;
 
+                CREATE TABLE IF NOT EXISTS city (
+                    city_id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    tg_channel TEXT,
+                    timetable_message_id TEXT,
+                    timetable_photo TEXT
+                );
+
                 CREATE TABLE IF NOT EXISTS user (
                     user_id INTEGER PRIMARY KEY,
                     telegram_id INTEGER UNIQUE NOT NULL,
                     is_admin BOOL,
                     name TEXT,
                     surname TEXT,
+                    city_id INTEGER,
                     first_contact datetime,
                     last_contact datetime,
                     lichess_rating INTEGER,
                     chesscom_rating INTEGER,
-                    rep_rating INTEGER
+                    rep_rating INTEGER,
+                    FOREIGN KEY (city_id) REFERENCES city (city_id)
                 );
 
                 CREATE TABLE IF NOT EXISTS tournament (
                     tournament_id INTEGER PRIMARY KEY,
                     tg_channel TEXT,
                     message_id INTEGER,
+                    city_id INTEGER,
                     summary TEXT,
                     date_time datetime,
-                    address TEXT
+                    address TEXT,
+                    FOREIGN KEY (city_id) REFERENCES city (city_id)
                 );
+
+                INSERT INTO city (city_id, name, tg_channel, timetable_message_id, timetable_photo)
+                VALUES (NULL, 'Москва', '@repchess', 3946, 'AgACAgIAAx0CXWR_YAACD2pnoJhLwjtCjNGn5jY8gjam2g9JxgACtOoxG99sCUltssZt07RHEgEAAwIAA3kAAzYE');
 
                 END;
                 """
@@ -299,5 +314,14 @@ class RepChessDB:
                 (tg_channel, message_id)
             )
 
+    # CITY =========================================================
+
+    # TODO: переделать нормально, tg_channel в аргументы
+    def get_photo_id(self):
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT timetable_photo FROM city WHERE tg_channel = '@repchess'"""
+            )
+        return cursor.fetchone()[0]
 
 rep_chess_db = RepChessDB()

@@ -161,9 +161,9 @@ async def main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     tournaments = rep_chess_db.get_tournaments(datetime.datetime(today.year, today.month, today.day, 0, 0, 0))
     message, inline_markup = construct_timetable(tournaments)
     context.user_data["timetable_markup"] = inline_markup
-    path_to_photo = os.path.join(os.environ.get("REPCHESS_LOG_DIR"), "weakly_timetable.jpg")
-    with open(path_to_photo, "rb") as photo:
-        await context.bot.send_photo(update.effective_chat.id, photo, caption=message, reply_markup=inline_markup, parse_mode="MarkdownV2")
+    # TODO: Наверное, вещи по типу channel.username можно сохранять в context.
+    photo_file_id = rep_chess_db.get_photo_id()
+    await context.bot.send_photo(update.effective_chat.id, photo_file_id, caption=message, reply_markup=inline_markup, parse_mode="MarkdownV2")
 
 
 timetable_main_message_handler = MessageHandler(filters.Regex("^📅  Расписание$"), main_message_handler)
