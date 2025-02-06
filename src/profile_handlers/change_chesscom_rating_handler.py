@@ -27,7 +27,7 @@ async def process_input_chesscom_rating(update: Update, context: ContextTypes.DE
         return
 
     context.user_data["chesscom_rating"] = chesscom_rating
-    context.user_data["state"] = None
+    context.user_data["text_state"] = None
     rep_chess_db.update_user_chesscom_rating(update.message.from_user.id, chesscom_rating)
 
     context.user_data["messages_to_delete"].append(update.message.message_id)
@@ -41,7 +41,7 @@ async def profile_chesscom_rating_handler(update: Update, context: ContextTypes.
         await query.answer()
 
     # save handler for text message
-    context.user_data["state"] = process_input_chesscom_rating
+    context.user_data["text_state"] = process_input_chesscom_rating
 
     message = await context.bot.send_message(update.effective_chat.id, "*Введите новый рейтинг [chess\.com](https://chess.com/):*", parse_mode="MarkdownV2", disable_web_page_preview=True)
     context.user_data["messages_to_delete"].append(message.message_id)

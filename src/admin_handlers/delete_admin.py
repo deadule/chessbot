@@ -29,7 +29,7 @@ async def process_deleting_admin(update: Update, context: ContextTypes.DEFAULT_T
         await delete_admin(update, context)
         return
 
-    context.user_data["state"] = None
+    context.user_data["text_state"] = None
     await update.message.reply_text(f"Вы удалили из админов *{old_admin_name}*", parse_mode="Markdown")
 
 
@@ -46,7 +46,7 @@ async def delete_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await admin_main_menu(update, context)
         return
 
-    context.user_data["state"] = process_deleting_admin
+    context.user_data["text_state"] = process_deleting_admin
     await context.bot.send_message(update.effective_chat.id, "Введите rep ID юзера, которого вы хотите удалить из админов:")
 
 

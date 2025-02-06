@@ -6,28 +6,17 @@ from databaseAPI import rep_chess_db
 
 SUPER_ADMIN_ID = 928688258
 
+
 admin_inline_keyboard = InlineKeyboardMarkup([
     [InlineKeyboardButton("Послать сообщение всем пользователям", callback_data="admin_send_push")],
-    [InlineKeyboardButton("Поменять недельное расписание", callback_data="admin_change_timetable")],
+    [InlineKeyboardButton("Добавить пост в расписание", callback_data="admin_update_timetable")],
+    [InlineKeyboardButton("Удалить пост из расписания", callback_data="admin_delete_timetable")],
     [InlineKeyboardButton("Добавить видео", callback_data="admin_add_video")],
     [InlineKeyboardButton("Добавить мерч", callback_data="admin_add_merch")],
     [InlineKeyboardButton("☠ Добавить нового админа", callback_data="admin_add_new_admin")],
     [InlineKeyboardButton("☠ Удалить админа", callback_data="admin_delete_admin")],
     [InlineKeyboardButton("☠ Удалить игрока из базы", callback_data="admin_delete_user")],
 ])
-
-
-"""admin_inline_keyboard = InlineKeyboardMarkup([
-    [InlineKeyboardButton("27.01 19:00 The Hat", callback_data="admin_send_push")],
-    [InlineKeyboardButton("27.01 20:00 Blanc", callback_data="admin_send_push")],
-    [InlineKeyboardButton("28.01 20:00 новички Ровестник", callback_data="admin_change_timetable")],
-    [InlineKeyboardButton("28.01 20:00 профессионалы", callback_data="admin_change_timetable")],
-    [InlineKeyboardButton("28.01 20:00 Duck Chess Mandy's", callback_data="admin_add_video")],
-    [InlineKeyboardButton("29.01 20:00 рапид Авангард", callback_data="admin_add_merch")],
-    #[InlineKeyboardButton("☠ Добавить нового админа", callback_data="admin_add_new_admin")],
-    #[InlineKeyboardButton("☠ Удалить админа", callback_data="admin_delete_admin")],
-    #[InlineKeyboardButton("☠ Удалить игрока из базы", callback_data="admin_delete_user")],
-])"""
 
 
 async def admin_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):

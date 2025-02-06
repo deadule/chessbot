@@ -28,7 +28,7 @@ async def process_adding_admin(update: Update, context: ContextTypes.DEFAULT_TYP
         await admin_add_new_admin(update, context)
         return
 
-    context.user_data["state"] = None
+    context.user_data["text_state"] = None
     await update.message.reply_text(f"Вы назначили админом *{new_admin_name}*", parse_mode="Markdown")
 
 
@@ -45,7 +45,7 @@ async def admin_add_new_admin(update: Update, context: ContextTypes.DEFAULT_TYPE
         await admin_main_menu(update, context)
         return
 
-    context.user_data["state"] = process_adding_admin
+    context.user_data["text_state"] = process_adding_admin
     await context.bot.send_message(update.effective_chat.id, "Введите rep ID юзера, которого вы хотите сделать админом:")
 
 

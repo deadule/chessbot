@@ -14,7 +14,7 @@ async def process_input_surname(update: Update, context: ContextTypes.DEFAULT_TY
         await profile_surname_handler(update, context)
 
     context.user_data["surname"] = surname
-    context.user_data["state"] = None
+    context.user_data["text_state"] = None
     rep_chess_db.update_user_surname(update.message.from_user.id, surname)
 
     context.user_data["messages_to_delete"].append(update.message.message_id)
@@ -28,7 +28,7 @@ async def profile_surname_handler(update: Update, context: ContextTypes.DEFAULT_
         await query.answer()
 
     # save handler for text message
-    context.user_data["state"] = process_input_surname
+    context.user_data["text_state"] = process_input_surname
 
     message = await context.bot.send_message(update.effective_chat.id, "*Введите фамилию:*", parse_mode="MarkdownV2")
     context.user_data["messages_to_delete"].append(message.message_id)

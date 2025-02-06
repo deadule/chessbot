@@ -16,13 +16,14 @@ from telegram.ext import (
 sys.path.insert(0, os.path.abspath("src"))
 sys.path.insert(0, os.path.abspath(os.path.join("src", "profile_handlers")))
 sys.path.insert(0, os.path.abspath(os.path.join("src", "admin_handlers")))
+sys.path.insert(0, os.path.abspath(os.path.join("src", "timetable_handlers")))
 
 
-from start import start
+from start import start_handlers
 from databaseAPI import rep_chess_db
 from admin_handlers import admin_callback_handlers
 from profile_handlers import profile_callback_handlers
-from timetable_handlers.timetable_handlers import timetable_callback_handlers
+from timetable_handlers import timetable_callback_handlers, process_new_post
 
 
 # Configure logging
@@ -46,28 +47,38 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
     """
     For flexibility we have to process all text messages from user here and
     transfer it to suitable handlers. The current function for processing update
-    is in context.user_data["state"]. If state = None, we can ignore message.
+    is in context.user_data["text_state"]. If state = None, we can ignore message.
     """
-    if not context.user_data or "state" not in context.user_data:
+    # The new post in group was published
+    if update.channel_post or update.edited_channel_post:
+        await process_new_post(update, context)
+        return
+
+    if not context.user_data or "text_state" not in context.user_data or context.user_data["text_state"] == None:
         # this is useless message from user. It is not some answer for handlers.
         logger.info(f"IGNORE MESSAGE {update.message.text}")
         return
 
-    if context.user_data["state"] == None:
+    await context.user_data["text_state"](update, context)
+
+
+async def global_forwarded_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.user_data or "forwarded_state" not in context.user_data or context.user_data["forwarded_state"] == None:
         # this is useless message from user. It is not some answer for handlers.
-        logger.info(f"IGNORE MESSAGE {update.message.text}")
+        logger.info(f"IGNORE FORWARDED MESSAGE {update.message.text}")
         return
 
-    await context.user_data["state"](update, context)
+    await context.user_data["forwarded_state"](update, context)
 
 
 def start_tg_bot(token: str):
     application = ApplicationBuilder().token(token).build()
 
-    application.add_handler(CommandHandler("start", start))
+    application.add_handlers(start_handlers)
     application.add_handlers(admin_callback_handlers)
     application.add_handlers(profile_callback_handlers)
     application.add_handlers(timetable_callback_handlers)
+    application.add_handler(MessageHandler(filters.FORWARDED, global_forwarded_message_handler))
     application.add_handler(MessageHandler(filters.ALL, global_message_handler))
 
     # never return

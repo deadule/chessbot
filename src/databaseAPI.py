@@ -14,11 +14,19 @@ logger.setLevel(logging.DEBUG)
 logger.propagate = False
 
 
+def converter_to_isoformat(date_time_b: bytes):
+    try:
+        date_time = datetime.datetime.fromisoformat(date_time_b.decode("utf-8"))
+    except ValueError:
+        return date_time_b
+    return date_time
+
+
+sqlite3.register_converter("datetime", converter_to_isoformat)
 sqlite3.register_adapter(datetime.datetime, lambda date: date.isoformat())
-sqlite3.register_converter("datetime", lambda date: datetime.datetime.fromisoformat(date.decode()))
 
 
-# TODO: maybe rewrite it with sqlalchemy
+# TODO: maybe rewrite it with sqlalchemy or somehow else...
 class RepChessDB:
     """
     Managing all DB-related stuff.
@@ -37,7 +45,7 @@ class RepChessDB:
         # Connect just once during all bot activity.
         # No need to connect() and close() at every transaction,
         # because this file won't run from multiple threads.
-        self.conn = sqlite3.connect(db_path)
+        self.conn = sqlite3.connect(db_path, detect_types=sqlite3.PARSE_DECLTYPES)
         self.conn.row_factory = sqlite3.Row
 
         with self.conn:
@@ -52,11 +60,20 @@ class RepChessDB:
                     is_admin BOOL,
                     name TEXT,
                     surname TEXT,
-                    first_contact TEXT,
-                    last_contact TEXT,
+                    first_contact datetime,
+                    last_contact datetime,
                     lichess_rating INTEGER,
                     chesscom_rating INTEGER,
                     rep_rating INTEGER
+                );
+
+                CREATE TABLE IF NOT EXISTS tournament (
+                    tournament_id INTEGER PRIMARY KEY,
+                    tg_channel TEXT,
+                    message_id INTEGER,
+                    summary TEXT,
+                    date_time datetime,
+                    address TEXT
                 );
 
                 END;
@@ -67,6 +84,8 @@ class RepChessDB:
     def __del__(self):
         if hasattr(self, "conn"):
             self.conn.close()
+
+    # USER =========================================================
 
     def register_user(
         self,
@@ -224,5 +243,61 @@ class RepChessDB:
 
         logger.debug(f"update user {user_id=} is_admin to False")
         return user["name"] + " " + (user["surname"] if user["surname"] else "")
+
+    # TOURNAMENT =========================================================
+
+    def add_tournament(
+        self,
+        tg_channel: str,
+        message_id: int,
+        summary: str,
+        date_time: datetime.datetime,
+        address: str | None = None
+    ) -> bool:
+        """
+        Add new tournament if it has another (date_time, address) and
+        tg_channel is in channel table.
+        Return True on success, False if tournament with same date_time and address exists.
+        """
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM tournament WHERE date_time = ? AND address = ?""",
+                (date_time, address)
+            )
+        user = cursor.fetchone()
+        if user:
+            logger.debug(f"Trying to add existed tournament: {message_id=} {summary=} {date_time=}")
+            return False
+
+        with self.conn:
+            cursor = self.conn.execute(
+                """INSERT INTO tournament (
+                    tournament_id,
+                    tg_channel,
+                    message_id,
+                    summary,
+                    date_time,
+                    address
+                ) VALUES(?, ?, ?, ?, ?, ?)""",
+                (None, tg_channel, message_id, summary, date_time, address)
+            )
+        logger.debug(f"Insert into tournaments {message_id=} {date_time=} {address=}")
+        return True
+
+    def get_tournaments(self, date_time: datetime.datetime) -> list:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM tournament WHERE date_time >= ? ORDER BY date_time""",
+                (date_time,)
+            )
+        return cursor.fetchall()
+
+    def remove_tournament(self, tg_channel: str, message_id: int):
+        with self.conn:
+            self.conn.execute(
+                """DELETE FROM tournament WHERE tg_channel = ? AND message_id = ?""",
+                (tg_channel, message_id)
+            )
+
 
 rep_chess_db = RepChessDB()

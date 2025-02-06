@@ -7,7 +7,6 @@ from telegram.ext import (
 )
 
 from databaseAPI import rep_chess_db
-from start import main_menu_reply_keyboard
 
 
 profile_inline_keyboard = InlineKeyboardMarkup([
@@ -15,7 +14,7 @@ profile_inline_keyboard = InlineKeyboardMarkup([
     [InlineKeyboardButton("📝  Фамилия", callback_data="profile_surname")],
     [InlineKeyboardButton("♞  Рейтинг lichess", callback_data="profile_lichess_rating")],
     [InlineKeyboardButton("♟️  Рейтинг chess.com", callback_data="profile_chesscom_rating")],
-    [InlineKeyboardButton("<< Назад", callback_data="profile_go_back")],
+    [InlineKeyboardButton("<< Назад", callback_data="go_main_menu")],
 ])
 
 
@@ -50,7 +49,7 @@ async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data["user_db_data"] = user_db_data
 
     # Delete saved state because here we already don't expect that useful user message will come.
-    context.user_data["state"] = None
+    context.user_data["text_state"] = None
 
     # Delete useless messages about correcting some data
     if "messages_to_delete" in context.user_data:
@@ -64,12 +63,4 @@ async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["messages_to_delete"].append(message.message_id)
 
 
-async def profile_go_back(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-
-    await context.bot.send_message(update.effective_chat.id, "Вы в главном меню", reply_markup=main_menu_reply_keyboard)
-
-
 profile_main_menu_handler = MessageHandler(filters.Regex("^👤 Профиль$"), main_menu_handler)
-profile_go_back_handler = CallbackQueryHandler(profile_go_back, "profile_go_back")

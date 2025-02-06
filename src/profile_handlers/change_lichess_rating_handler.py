@@ -27,7 +27,7 @@ async def process_input_lichess_rating(update: Update, context: ContextTypes.DEF
         return
 
     context.user_data["lichess_rating"] = lichess_rating
-    context.user_data["state"] = None
+    context.user_data["text_state"] = None
     rep_chess_db.update_user_lichess_rating(update.message.from_user.id, lichess_rating)
 
     context.user_data["messages_to_delete"].append(update.message.message_id)
@@ -41,7 +41,7 @@ async def profile_lichess_rating_handler(update: Update, context: ContextTypes.D
         await query.answer()
 
     # save handler for text message
-    context.user_data["state"] = process_input_lichess_rating
+    context.user_data["text_state"] = process_input_lichess_rating
 
     message = await context.bot.send_message(update.effective_chat.id, "*Введите новый рейтинг [lichess](https://lichess.org/):*", parse_mode="MarkdownV2", disable_web_page_preview=True)
     context.user_data["messages_to_delete"].append(message.message_id)
