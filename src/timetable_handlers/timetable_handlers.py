@@ -103,7 +103,7 @@ async def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_T
         return
 
     if update.message.api_kwargs:
-        tournament["tg_channel"] = update.message.api_kwargs["forward_from_chat"].username
+        tournament["tg_channel"] = update.message.api_kwargs["forward_from_chat"]["username"]
         tournament["message_id"] = update.message.api_kwargs["forward_from_message_id"]
     else:
         tournament["tg_channel"] = update.message.forward_from_chat.username
