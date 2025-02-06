@@ -108,6 +108,7 @@ class RepChessDB:
         is_admin: bool = False,
         name: str | None = None,
         surname: str | None = None,
+        city_id: int | None = None,
         first_contact: datetime.datetime | None = None,
         last_contact: datetime.datetime | None = None,
         lichess_rating: int | None = None,
@@ -125,24 +126,26 @@ class RepChessDB:
                     is_admin,
                     name,
                     surname,
+                    city_id,
                     first_contact,
                     last_contact,
                     lichess_rating,
                     chesscom_rating,
                     rep_rating
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (None,
                  telegram_id,
                  is_admin,
                  name,
                  surname,
+                 city_id,
                  first_contact if first_contact else datetime.datetime.now(),
                  last_contact,
                  lichess_rating,
                  chesscom_rating,
                  rep_rating)
             )
-        logger.debug(f"register user {telegram_id}, {is_admin}, {name}, {surname}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating}")
+        logger.debug(f"register user {telegram_id}, {is_admin}, {name}, {surname}, {city_id}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating}")
 
     def update_user_name(self, telegram_id: int, name: str):
         with self.conn:
@@ -267,6 +270,7 @@ class RepChessDB:
         message_id: int,
         summary: str,
         date_time: datetime.datetime,
+        city_id: int | None = None,
         address: str | None = None
     ) -> bool:
         """
@@ -290,11 +294,12 @@ class RepChessDB:
                     tournament_id,
                     tg_channel,
                     message_id,
+                    city_id,
                     summary,
                     date_time,
                     address
-                ) VALUES(?, ?, ?, ?, ?, ?)""",
-                (None, tg_channel, message_id, summary, date_time, address)
+                ) VALUES(?, ?, ?, ?, ?, ?, ?)""",
+                (None, tg_channel, message_id, city_id, summary, date_time, address)
             )
         logger.debug(f"Insert into tournaments {message_id=} {date_time=} {address=}")
         return True

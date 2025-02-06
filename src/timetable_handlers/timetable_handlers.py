@@ -7,6 +7,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 from databaseAPI import rep_chess_db
+from start import main_menu_reply_keyboard
 
 
 DIGITS_EMOJI = {
@@ -89,7 +90,7 @@ def parse_text_post(post: str) -> dict | None:
     }
 
 
-def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
     if not text:
         text = update.message.caption
@@ -98,6 +99,7 @@ def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     tournament = parse_text_post(text)
     if not tournament:
+        await context.bot.send_message(update.effective_chat.id, "Пост не подходит под формат")
         return
     tournament["tg_channel"] = update.message.forward_from_chat.username
     tournament["message_id"] = update.message.forward_from_message_id
@@ -105,6 +107,7 @@ def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rep_chess_db.add_tournament(**tournament)
 
     context.user_data["forwarded_state"] = None
+    await context.bot.send_message(update.effective_chat.id, "Запрос обработан.", reply_markup=main_menu_reply_keyboard)
 
 
 async def process_new_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -129,15 +132,15 @@ async def process_new_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def construct_timetable(tournaments: List[datetime.datetime]) -> str:
-    result_str = "📅  Анонсы\n"
+    result_str = "🌟  *_Анонсы_*\n"
     result_markup = []
 
     for i, tournament in enumerate(tournaments, 1):
-        if i % 6 == 1:
+        if i % 5 == 1:
             result_markup.append([])
         text_number = DIGITS_EMOJI[i//10] if i >= 10 else ""
         text_number += DIGITS_EMOJI[i%10]
-        result_str += f"\n{text_number}  {tournament[4].strftime("%d\\.%m %H:%M")}\n{tournament[3]}\n"
+        result_str += f"\n{text_number}  __{tournament[5].strftime("%d\\.%m %H:%M")}__\n   *{tournament[4]}*\n"
 
         result_markup[-1].append(InlineKeyboardButton(text_number, callback_data=f"timetable_tournament:{tournament[1]}:{tournament[2]}"))
     result_markup.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])
@@ -151,7 +154,7 @@ async def tournament_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
     _, channel, message_id = query.data.split(":")
 
     await context.bot.forward_message(update.effective_chat.id, "@" + channel, int(message_id))
-    await context.bot.send_message(update.effective_chat.id, "📅  Анонсы", reply_markup=context.user_data["timetable_markup"])
+    await context.bot.send_message(update.effective_chat.id, "🌟  Анонсы", reply_markup=context.user_data["timetable_markup"])
 
 
 async def main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):

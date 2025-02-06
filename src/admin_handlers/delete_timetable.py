@@ -5,6 +5,7 @@ from telegram.ext import (
 )
 
 from databaseAPI import rep_chess_db
+from start import main_menu_reply_keyboard
 
 
 async def delete_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -13,7 +14,7 @@ async def delete_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update.message.forward_from_message_id
     )
     context.user_data["forwarded_state"] = None
-    await context.bot.send_message(update.effective_chat.id, "Запрос обработан.")
+    await context.bot.send_message(update.effective_chat.id, "Запрос обработан.", reply_markup=main_menu_reply_keyboard)
 
 
 async def admin_delete_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
