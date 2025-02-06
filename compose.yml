@@ -1,13 +1,13 @@
-services:
-  web-server:
-    image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/web-server:latest
-    build:
-      context: .
-      dockerfile: web-server.Dockerfile
-    deploy:
-      update_config:
-        order: start-first
-        failure_action: rollback
+#services:
+#  web-server:
+#    image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/web-server:latest
+#    build:
+#      context: .
+#      dockerfile: web-server.Dockerfile
+#    deploy:
+#      update_config:
+#        order: start-first
+#        failure_action: rollback
 
   bot:
     image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/bot:latest
@@ -26,26 +26,26 @@ services:
         order: stop-first
         failure_action: rollback
 
-  caddy:
-    image: caddy:2.8.4-alpine
-    command:
-      - caddy
-      - run
-      - --config=/Caddyfile
-      - --adapter
-      - caddyfile
-    volumes:
-      - /opt/chessbot/caddy:/data
-    configs:
-      - Caddyfile
-    ports:
-      - "80:80"
-      - "443:443"
-    deploy:
-      update_config:
-        order: start-first
-        failure_action: rollback
+#  caddy:
+#    image: caddy:2.8.4-alpine
+#    command:
+#      - caddy
+#      - run
+#      - --config=/Caddyfile
+#      - --adapter
+#      - caddyfile
+#    volumes:
+#      - /opt/chessbot/caddy:/data
+#    configs:
+#      - Caddyfile
+#    ports:
+#      - "80:80"
+#      - "443:443"
+#    deploy:
+#      update_config:
+#        order: start-first
+#        failure_action: rollback
 
-configs:
-  Caddyfile:
-    file: ./Caddyfile
+#configs:
+#  Caddyfile:
+#    file: ./Caddyfile
