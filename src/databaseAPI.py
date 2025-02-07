@@ -57,7 +57,7 @@ class RepChessDB:
                 CREATE TABLE IF NOT EXISTS city (
                     city_id INTEGER PRIMARY KEY,
                     name TEXT,
-                    tg_channel TEXT,
+                    tg_channel TEXT UNIQUE,
                     timetable_message_id TEXT,
                     timetable_photo TEXT
                 );
@@ -88,7 +88,7 @@ class RepChessDB:
                     FOREIGN KEY (city_id) REFERENCES city (city_id)
                 );
 
-                INSERT INTO city (city_id, name, tg_channel, timetable_message_id, timetable_photo)
+                INSERT OR IGNORE INTO city (city_id, name, tg_channel, timetable_message_id, timetable_photo)
                 VALUES (NULL, 'Москва', '@repchess', 3946, 'AgACAgIAAx0CXWR_YAACD2pnoJhLwjtCjNGn5jY8gjam2g9JxgACtOoxG99sCUltssZt07RHEgEAAwIAA3kAAzYE');
 
                 END;
@@ -303,6 +303,37 @@ class RepChessDB:
             )
         logger.debug(f"Insert into tournaments {message_id=} {date_time=} {address=}")
         return True
+
+    def update_tournament(
+        self,
+        tg_channel: str,
+        message_id: int,
+        summary: str,
+        date_time: datetime.datetime,
+        city_id: int | None = None,
+        address: str | None = None
+    ):
+        """
+        Update tournament info if tournament with same tg_channel and message_id exists.
+        Otherwise just add it as new tournament.
+        """
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM tournament WHERE message_id = ? AND tg_channel = ?""",
+                (message_id, tg_channel)
+            )
+        user = cursor.fetchone()
+        if not user:
+            logger.debug(f"Trying to update non existent tournament: {message_id=} {summary=} {date_time=}")
+            self.add_tournament(tg_channel, message_id, summary, date_time, city_id, address)
+            return
+
+        self.conn.execute(
+            """UPDATE tournament SET summary = ?, date_time = ?, city_id = ?, address = ? WHERE message_id = ? AND tg_channel = ?""",
+            (summary, date_time, city_id, address, message_id, tg_channel)
+        )
+        logger.debug(f"Update tournament {tg_channel} {message_id=} {date_time=} {address=} ")
+
 
     def get_tournaments(self, date_time: datetime.datetime) -> list:
         with self.conn:

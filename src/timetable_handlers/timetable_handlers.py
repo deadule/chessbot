@@ -121,10 +121,12 @@ async def process_new_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     If it is tournament announcement - then save it in database.
     Otherwise do nothing.
     """
+    if not update.channel_post:
+        return
     text = update.channel_post.text
     if not text:
         text = update.channel_post.caption
-    # TODO: Обрабатывать измененные сообщения? И подменять его в БД по message_id.
+
     if not text:
         return
 
@@ -134,6 +136,25 @@ async def process_new_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tournament["tg_channel"] = update.channel_post.chat.username
     tournament["message_id"] = update.channel_post.message_id
     rep_chess_db.add_tournament(**tournament)
+
+
+async def process_edited_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not update.edited_channel_post:
+        return
+    text = update.edited_channel_post.text
+    if not text:
+        text = update.edited_channel_post.caption
+
+    if not text:
+        return
+
+    tournament = parse_text_post(text)
+    if not tournament:
+        return
+
+    tournament["tg_channel"] = update.edited_channel_post.chat.username
+    tournament["message_id"] = update.edited_channel_post.message_id
+    rep_chess_db.update_tournament(**tournament)
 
 
 def construct_timetable(tournaments: List[datetime.datetime]) -> str:

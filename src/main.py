@@ -5,7 +5,6 @@ import sys
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
-    CommandHandler,
     ContextTypes,
     MessageHandler,
     filters,
@@ -23,7 +22,7 @@ from start import start_handlers
 from databaseAPI import rep_chess_db
 from admin_handlers import admin_callback_handlers
 from profile_handlers import profile_callback_handlers
-from timetable_handlers import timetable_callback_handlers, process_new_post
+from timetable_handlers import timetable_callback_handlers, process_new_post, process_edited_post
 
 
 # Configure logging
@@ -50,8 +49,12 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
     is in context.user_data["text_state"]. If state = None, we can ignore message.
     """
     # The new post in group was published
-    if update.channel_post or update.edited_channel_post:
+    if update.channel_post:
         await process_new_post(update, context)
+        return
+    # Post was edited in group
+    if update.edited_channel_post:
+        await process_edited_post(update, context)
         return
 
     if not context.user_data or "text_state" not in context.user_data or context.user_data["text_state"] == None:
