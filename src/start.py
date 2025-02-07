@@ -23,7 +23,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def go_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    await query.answer()
+    if query:
+        await query.answer()
 
     await context.bot.send_message(update.effective_chat.id, "Вы в главном меню", reply_markup=main_menu_reply_keyboard)
 

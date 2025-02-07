@@ -2,6 +2,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CommandHandler, ContextTypes
 
 from databaseAPI import rep_chess_db
+from start import go_main_menu
 
 
 SUPER_ADMIN_ID = 928688258
@@ -27,6 +28,7 @@ async def admin_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if not is_admin:
         await context.bot.send_message(update.effective_chat.id, "Хорошая попытка, но ты не админ :)")
+        await go_main_menu(update, context)
         return
     await context.bot.send_message(update.effective_chat.id, "Опции админа:", reply_markup=admin_inline_keyboard)
 

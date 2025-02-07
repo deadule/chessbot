@@ -209,7 +209,7 @@ class RepChessDB:
                 """SELECT is_admin FROM user WHERE user.telegram_id == ?""", (telegram_id,)
             )
         result = cursor.fetchone()
-        return bool(result)
+        return bool(result[0])
 
     def set_user_as_admin(self, user_id: int) -> str | None:
         """
