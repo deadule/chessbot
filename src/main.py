@@ -68,7 +68,10 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
 async def global_forwarded_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not context.user_data or "forwarded_state" not in context.user_data or context.user_data["forwarded_state"] == None:
         # this is useless message from user. It is not some answer for handlers.
-        logger.info(f"IGNORE FORWARDED MESSAGE {update.message.text}")
+        if update.channel_post:
+            logger.info(f"IGNORE FORWARDED channel post {update.channel_post.text}")
+        elif update.message:
+            logger.info(f"IGNORE FORWARDED message {update.message.text}")
         return
 
     await context.user_data["forwarded_state"](update, context)
