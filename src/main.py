@@ -48,6 +48,10 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
     transfer it to suitable handlers. The current function for processing update
     is in context.user_data["text_state"]. If state = None, we can ignore message.
     """
+    # If there was expecting of forwarded message - remove it.
+    if context.user_data and "forwarded_state" in context.user_data:
+        context.user_data["forwarded_state"] = None
+
     # The new post in group was published
     if update.channel_post:
         await process_new_post(update, context)
@@ -66,6 +70,10 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def global_forwarded_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # If there was expecting of text message - remove it.
+    if context.user_data and "text_state" in context.user_data:
+        context.user_data["text_state"] = None
+
     if not context.user_data or "forwarded_state" not in context.user_data or context.user_data["forwarded_state"] == None:
         # this is useless message from user. It is not some answer for handlers.
         if update.channel_post:
