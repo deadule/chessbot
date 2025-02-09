@@ -16,7 +16,7 @@ async def delete_forwarded_timetable(update: Update, context: ContextTypes.DEFAU
         update.message.forward_from_message_id
     )
     context.user_data["forwarded_state"] = None
-    await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard)
+    await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard())
 
 
 async def delete_link_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -37,7 +37,7 @@ async def delete_link_timetable(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     rep_chess_db.remove_tournament(channel, int(message_id))
-    await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard)
+    await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard())
 
 
 async def admin_delete_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):

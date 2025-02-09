@@ -9,14 +9,15 @@ SUPER_ADMIN_ID = 928688258
 
 
 admin_inline_keyboard = InlineKeyboardMarkup([
-    [InlineKeyboardButton("Послать сообщение всем пользователям", callback_data="admin_send_push")],
     [InlineKeyboardButton("Добавить пост в расписание", callback_data="admin_update_timetable")],
     [InlineKeyboardButton("Удалить пост из расписания", callback_data="admin_delete_timetable")],
+    [InlineKeyboardButton("Добавить пост для лагеря", callback_data="admin_add_camp")],
+    [InlineKeyboardButton("Удалить пост для лагеря", callback_data="admin_delete_camp")],
     [InlineKeyboardButton("Добавить видео", callback_data="admin_add_video")],
     [InlineKeyboardButton("Добавить мерч", callback_data="admin_add_merch")],
-    [InlineKeyboardButton("☠ Добавить нового админа", callback_data="admin_add_new_admin")],
-    [InlineKeyboardButton("☠ Удалить админа", callback_data="admin_delete_admin")],
-    [InlineKeyboardButton("☠ Удалить игрока из базы", callback_data="admin_delete_user")],
+    [InlineKeyboardButton("💀 Добавить нового админа", callback_data="admin_add_new_admin")],
+    [InlineKeyboardButton("💀 Удалить админа", callback_data="admin_delete_admin")],
+    [InlineKeyboardButton("💀 Удалить игрока из базы", callback_data="admin_delete_user")],
 ])
 
 

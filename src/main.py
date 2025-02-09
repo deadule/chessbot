@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.abspath("src"))
 sys.path.insert(0, os.path.abspath(os.path.join("src", "profile_handlers")))
 sys.path.insert(0, os.path.abspath(os.path.join("src", "admin_handlers")))
 sys.path.insert(0, os.path.abspath(os.path.join("src", "timetable_handlers")))
+sys.path.insert(0, os.path.abspath(os.path.join("src", "camp_handlers")))
 
 
 from start import start_handlers
@@ -23,6 +24,7 @@ from databaseAPI import rep_chess_db
 from admin_handlers import admin_callback_handlers
 from profile_handlers import profile_callback_handlers
 from timetable_handlers import timetable_callback_handlers, process_new_post, process_edited_post
+from camp_handlers import camp_callback_handlers
 
 
 # Configure logging
@@ -48,7 +50,7 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
     transfer it to suitable handlers. The current function for processing update
     is in context.user_data["text_state"]. If state = None, we can ignore message.
     """
-    # If there was expecting of forwarded message - remove it.
+    # If there was expectations of forwarded message - remove it.
     if context.user_data and "forwarded_state" in context.user_data:
         context.user_data["forwarded_state"] = None
 
@@ -92,6 +94,7 @@ def start_tg_bot(token: str):
     application.add_handlers(admin_callback_handlers)
     application.add_handlers(profile_callback_handlers)
     application.add_handlers(timetable_callback_handlers)
+    application.add_handlers(camp_callback_handlers)
     application.add_handler(MessageHandler(filters.FORWARDED, global_forwarded_message_handler))
     application.add_handler(MessageHandler(filters.ALL, global_message_handler))
 

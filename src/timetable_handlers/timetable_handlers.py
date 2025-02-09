@@ -111,7 +111,7 @@ async def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_T
     rep_chess_db.add_tournament(**tournament)
 
     context.user_data["forwarded_state"] = None
-    await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard)
+    await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard())
 
 
 async def process_new_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
