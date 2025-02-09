@@ -1,4 +1,3 @@
-import os
 import re
 import datetime
 from typing import List
@@ -55,7 +54,7 @@ def escape_special_symbols(string: str) -> str:
     return string
 
 
-def parse_text_post(post: str) -> dict | None:
+def parse_tournament_post(post: str) -> dict | None:
     """
     Parse post from channel and return dict if this post have correct format:
     {
@@ -97,7 +96,7 @@ async def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_T
     if not text:
         return
 
-    tournament = parse_text_post(text)
+    tournament = parse_tournament_post(text)
     if not tournament:
         await context.bot.send_message(update.effective_chat.id, "Пост не подходит под формат")
         return
@@ -118,7 +117,7 @@ async def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_T
 async def process_new_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
     Process new post in tg channel.
-    If it is tournament announcement - then save it in database.
+    If it is tournament announcement or weakly timetable - save it in database.
     Otherwise do nothing.
     """
     if not update.channel_post:
@@ -130,7 +129,13 @@ async def process_new_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not text:
         return
 
-    tournament = parse_text_post(text)
+    if text.startswith("📅 Расписание на неделю:\n\n"):
+        # update weakly timetable
+        photo_id = max(update.channel_post.photo, key = lambda x: x.height).file_id
+        rep_chess_db.update_weakly_info(update.channel_post.chat.username, update.channel_post.message_id, photo_id)
+        return
+
+    tournament = parse_tournament_post(text)
     if not tournament:
         return
     tournament["tg_channel"] = update.channel_post.chat.username
@@ -148,7 +153,7 @@ async def process_edited_post(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not text:
         return
 
-    tournament = parse_text_post(text)
+    tournament = parse_tournament_post(text)
     if not tournament:
         return
 

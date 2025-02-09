@@ -356,8 +356,16 @@ class RepChessDB:
     def get_photo_id(self):
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT timetable_photo FROM city WHERE tg_channel = '@repchess'"""
+                """SELECT timetable_photo FROM city WHERE tg_channel = 'repchess'"""
             )
         return cursor.fetchone()[0]
+
+    def update_weakly_info(self, channel, message_id, photo_id):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE city SET timetable_message_id = ?, timetable_photo = ? WHERE tg_channel=?""",
+                (message_id, photo_id, channel)
+            )
+
 
 rep_chess_db = RepChessDB()
