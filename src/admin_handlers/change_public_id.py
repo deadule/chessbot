@@ -19,12 +19,12 @@ async def process_changing_public_id(update: Update, context: ContextTypes.DEFAU
         return
 
     old_id, new_id = int(old_id), int(new_id)
-    if old_id < 0 or old_id >= 100000:
+    if old_id < 1 or old_id >= 100000:
         await update.message.reply_text("Старый ID не попадает в диапазон")
         await admin_change_public_id(update, context)
         return
 
-    if new_id < 0 or new_id >= 100000:
+    if new_id < 1 or new_id >= 100000:
         await update.message.reply_text("Новый ID не попадает в диапазон")
         await admin_change_public_id(update, context)
         return
