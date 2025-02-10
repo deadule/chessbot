@@ -89,7 +89,7 @@ class RepChessDB:
                 );
 
                 INSERT OR IGNORE INTO city (city_id, name, tg_channel, timetable_message_id, timetable_photo)
-                VALUES (NULL, 'Москва', '@repchess', 3946, 'AgACAgIAAx0CXWR_YAACD2pnoJhLwjtCjNGn5jY8gjam2g9JxgACtOoxG99sCUltssZt07RHEgEAAwIAA3kAAzYE');
+                VALUES (NULL, 'Москва', 'repchess', 4049, 'AgACAgIAAxkBAAICOWeprHiYq4S-QvLRHhKi55UGhyDSAAK68DEbeYtJSYOEC1BSSA-_AQADAgADeQADNgQ');
 
                 END;
                 """
