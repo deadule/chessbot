@@ -9,7 +9,7 @@ async def process_input_surname(update: Update, context: ContextTypes.DEFAULT_TY
     surname = update.message.text
     # Too long surname
     if len(surname) > 100:
-        message = await update.message.reply_text("Странная фамилия\. Попробуйте покороче\.")
+        message = await update.message.reply_text("Странная фамилия. Попробуйте покороче.")
         context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
         await profile_surname_handler(update, context)
 

@@ -3,6 +3,7 @@ import datetime
 import logging
 import os
 import sys
+from collections import deque
 
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,12 @@ class RepChessDB:
 
     NOTE: not thread-safe. But fast.
     """
+
+    # Assume that all players amount is less then 1 million.
+    MAX_PUBLIC_ID = 1000000
+
+    # We need this variable to optimize searching public id for new player.
+    FREE_PUBLIC_IDS = deque(maxlen=100000)
 
     def initialize(self):
         db_path = os.getenv("REPCHESS_DB_PATH")
@@ -65,9 +72,11 @@ class RepChessDB:
                 CREATE TABLE IF NOT EXISTS user (
                     user_id INTEGER PRIMARY KEY,
                     telegram_id INTEGER UNIQUE NOT NULL,
+                    public_id INTEGER UNIQUE NOT NULL,
                     is_admin BOOL,
                     name TEXT,
                     surname TEXT,
+                    nickname TEXT,
                     city_id INTEGER,
                     first_contact datetime,
                     last_contact datetime,
@@ -94,6 +103,23 @@ class RepChessDB:
                 END;
                 """
             )
+
+        with self.conn:
+            cursor = self.conn.execute("""SELECT public_id FROM user""")
+        all_ids = cursor.fetchall()
+
+        if all_ids:
+            occupied_ids = {public_id[0] for public_id in all_ids}
+        else:
+            occupied_ids = {}
+
+        # First 100 ids is for special use.
+        for i in range(101, 1000000):
+            if i % 1000 == 0 and len(self.FREE_PUBLIC_IDS) > 90000:
+                break
+            if i not in occupied_ids:
+                self.FREE_PUBLIC_IDS.appendleft(i)
+
         logger.info("Database is ready")
 
     def __del__(self):
@@ -105,9 +131,11 @@ class RepChessDB:
     def register_user(
         self,
         telegram_id: int,
+        public_id: int | None = None,
         is_admin: bool = False,
         name: str | None = None,
         surname: str | None = None,
+        nickname: str | None = None,
         city_id: int | None = None,
         first_contact: datetime.datetime | None = None,
         last_contact: datetime.datetime | None = None,
@@ -118,26 +146,33 @@ class RepChessDB:
         """
         Register user if user with given telegram_id doesn't exist.
         """
+        if not public_id:
+            public_id = self.FREE_PUBLIC_IDS.pop()
+
         with self.conn:
             self.conn.execute(
                 """INSERT OR IGNORE INTO user (
                     user_id,
                     telegram_id,
+                    public_id,
                     is_admin,
                     name,
                     surname,
+                    nickname,
                     city_id,
                     first_contact,
                     last_contact,
                     lichess_rating,
                     chesscom_rating,
                     rep_rating
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (None,
                  telegram_id,
+                 public_id,
                  is_admin,
                  name,
                  surname,
+                 nickname,
                  city_id,
                  first_contact if first_contact else datetime.datetime.now(),
                  last_contact,
@@ -145,7 +180,33 @@ class RepChessDB:
                  chesscom_rating,
                  rep_rating)
             )
-        logger.debug(f"register user {telegram_id}, {is_admin}, {name}, {surname}, {city_id}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating}")
+        logger.debug(f"register user {telegram_id}, {public_id}, {is_admin}, {name}, {surname}, {nickname}, {city_id}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating}")
+
+    def update_user_public_id(self, old_public_id: int, public_id: int) -> bool:
+        """
+        Return False if public_id is already occupied.
+        Otherwise return True.
+        """
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT public_id FROM user WHERE public_id = ?""",
+                (public_id,)
+            )
+        if cursor.fetchone():
+            return False
+
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET public_id = ? WHERE public_id = ?""",
+                (public_id, old_public_id)
+            )
+        logger.debug(f"update user public id from {old_public_id} to {public_id}")
+        self.FREE_PUBLIC_IDS.append(old_public_id)
+        try:
+            self.FREE_PUBLIC_IDS.remove(public_id)
+        except ValueError:
+            pass
+        return True
 
     def update_user_name(self, telegram_id: int, name: str):
         with self.conn:
@@ -162,6 +223,14 @@ class RepChessDB:
                 (surname, datetime.datetime.now(), telegram_id)
             )
         logger.debug(f"update user surname {telegram_id=}, {surname=}")
+
+    def update_user_nickname(self, telegram_id: int, nickname: str):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET nickname = ?, last_contact = ? WHERE telegram_id = ?""",
+                (nickname, datetime.datetime.now(), telegram_id)
+            )
+        logger.debug(f"update user nickname {telegram_id=}, {nickname=}")
 
     def update_user_lichess_rating(self, telegram_id: int, lichess_rating: int):
         with self.conn:
@@ -211,16 +280,16 @@ class RepChessDB:
         result = cursor.fetchone()
         return bool(result[0])
 
-    def set_user_as_admin(self, user_id: int) -> str | None:
+    def set_user_as_admin(self, public_id: int) -> str | None:
         """
-        Return None if there is no user with 'user_id'.
-        Return "" - empty string if the user with 'user_id' already is admin.
-        Otherwise return users name + surname.
+        Return None if there is no user with 'public_id'.
+        Return "" - empty string if the user with 'public_id' already is admin.
+        Otherwise return users name + surname + nickname.
         """
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT * FROM user WHERE user_id = ?""",
-                (user_id,)
+                """SELECT * FROM user WHERE public_id = ?""",
+                (public_id,)
             )
         user = cursor.fetchone()
         if not user:
@@ -230,22 +299,22 @@ class RepChessDB:
             return ""
 
         self.conn.execute(
-            """UPDATE user SET is_admin = ? WHERE user_id = ?""",
-            (True, user_id)
+            """UPDATE user SET is_admin = ? WHERE public_id = ?""",
+            (True, public_id)
         )
-        logger.debug(f"update user {user_id=} is_admin to True")
-        return user["name"] + " " + (user["surname"] if user["surname"] else "")
+        logger.debug(f"update user {public_id=} is_admin to True")
+        return user["name"] + " " + (user["surname"] if user["surname"] else "") + " " + (user["nickname"] if user["nickname"] else "")
 
-    def remove_user_from_admins(self, user_id: int):
+    def remove_user_from_admins(self, public_id: int):
         """
-        Return None if there is no user with 'user_id'.
-        Return "" - empty string if the user with 'user_id' already is admin.
+        Return None if there is no user with 'public_id'.
+        Return "" - empty string if the user with 'public_id' already is admin.
         Otherwise return users name + surname.
         """
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT * FROM user WHERE user_id = ?""",
-                (user_id,)
+                """SELECT * FROM user WHERE public_id = ?""",
+                (public_id,)
             )
         user = cursor.fetchone()
         if not user:
@@ -255,12 +324,12 @@ class RepChessDB:
             return ""
 
         self.conn.execute(
-            """UPDATE user SET is_admin = ? WHERE user_id = ?""",
-            (False, user_id)
+            """UPDATE user SET is_admin = ? WHERE public_id = ?""",
+            (False, public_id)
         )
 
-        logger.debug(f"update user {user_id=} is_admin to False")
-        return user["name"] + " " + (user["surname"] if user["surname"] else "")
+        logger.debug(f"update user {public_id=} is_admin to False")
+        return user["name"] + " " + (user["surname"] if user["surname"] else "") + " " + (user["nickname"] if user["nickname"] else "")
 
     # TOURNAMENT =========================================================
 

@@ -9,6 +9,7 @@ SUPER_ADMIN_ID = 928688258
 
 
 admin_inline_keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("Изменить ID игрока", callback_data="admin_change_public_id")],
     [InlineKeyboardButton("Добавить пост в расписание", callback_data="admin_update_timetable")],
     [InlineKeyboardButton("Удалить пост из расписания", callback_data="admin_delete_timetable")],
     [InlineKeyboardButton("Добавить пост для лагеря", callback_data="admin_add_camp")],

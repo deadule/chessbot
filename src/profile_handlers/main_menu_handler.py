@@ -10,6 +10,7 @@ from databaseAPI import rep_chess_db
 
 
 profile_inline_keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("📝  Ник", callback_data="profile_nickname")],
     [InlineKeyboardButton("📝  Имя", callback_data="profile_name")],
     [InlineKeyboardButton("📝  Фамилия", callback_data="profile_surname")],
     [InlineKeyboardButton("♞  Рейтинг lichess", callback_data="profile_lichess_rating")],
@@ -25,7 +26,10 @@ def construct_profile_message(user_db_data: dict) -> str:
         """
         return src.join(string.rsplit(dst, 1))
 
-    profile_str = f"👤 *_Ваш профиль:_*\n ├ ID:  `{user_db_data['user_id']}`\n ├ Имя:  `{user_db_data['name']}`\n"
+    profile_str = f"👤 *_Ваш профиль:_*\n ├ ID:  `{user_db_data['public_id']}`\n"
+    if user_db_data['nickname']:
+        profile_str += f" ├ Ник:  `{user_db_data['nickname']}`\n"
+    profile_str +=  f" ├ Имя:  `{user_db_data['name']}`\n"
     if user_db_data['surname']:
         profile_str += f" ├ Фамилия:  `{user_db_data['surname']}`\n"
     profile_str = change_last_symbol(profile_str, "├", "└")

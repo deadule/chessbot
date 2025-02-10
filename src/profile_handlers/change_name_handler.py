@@ -9,7 +9,7 @@ async def process_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE)
     name = update.message.text
     # Too long name
     if len(name) > 100:
-        message = await update.message.reply_text("Странное имя\. Попробуйте покороче\.")
+        message = await update.message.reply_text("Странное имя. Попробуйте покороче.")
         context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
         await change_name_handler(update, context)
         return
