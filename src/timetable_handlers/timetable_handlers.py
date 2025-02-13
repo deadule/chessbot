@@ -69,6 +69,7 @@ def parse_tournament_post(post: str) -> dict | None:
 
     string = re_match.group(0)
     string = string.split("\n")
+    string.remove("")
 
     day, month = map(int, string[0].split("."))
 
