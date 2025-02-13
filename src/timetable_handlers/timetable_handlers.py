@@ -63,7 +63,7 @@ def parse_tournament_post(post: str) -> dict | None:
         address: ...,
     }
     """
-    re_match = re.search(r"\d+.\d+\n\d+:\d+\nАдрес:.*$", post)
+    re_match = re.search(r"\n\d+.\d+.?\n\d+:\d+.?\nАдрес:.*$", post)
     if not re_match:
         return None
 
