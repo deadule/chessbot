@@ -49,4 +49,6 @@ async def admin_add_new_admin(update: Update, context: ContextTypes.DEFAULT_TYPE
     await context.bot.send_message(update.effective_chat.id, "Введите rep ID юзера, которого вы хотите сделать админом:")
 
 
-admin_add_new_admin_handler = CallbackQueryHandler(admin_add_new_admin, pattern="^admin_add_new_admin$")
+admin_add_new_admin_handlers = [
+    CallbackQueryHandler(admin_add_new_admin, pattern="^admin_add_new_admin$")
+]

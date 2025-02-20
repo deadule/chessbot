@@ -53,4 +53,6 @@ async def admin_change_public_id(update: Update, context: ContextTypes.DEFAULT_T
     )
 
 
-admin_change_public_id_handler = CallbackQueryHandler(admin_change_public_id, pattern="^admin_change_public_id$")
+admin_change_public_id_handlers = [
+    CallbackQueryHandler(admin_change_public_id, pattern="^admin_change_public_id$")
+]

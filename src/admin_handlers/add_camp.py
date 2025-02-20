@@ -29,4 +29,6 @@ async def admin_update_timetable(update: Update, context: ContextTypes.DEFAULT_T
     )
 
 
-admin_add_camp_handler = CallbackQueryHandler(admin_update_timetable, pattern="^admin_add_camp$")
+admin_add_camp_handlers = [
+    CallbackQueryHandler(admin_update_timetable, pattern="^admin_add_camp$")
+]

@@ -56,4 +56,6 @@ async def admin_delete_timetable(update: Update, context: ContextTypes.DEFAULT_T
     )
 
 
-admin_delete_timetable_handler = CallbackQueryHandler(admin_delete_timetable, pattern="^admin_delete_timetable$")
+admin_delete_timetable_handlers = [
+    CallbackQueryHandler(admin_delete_timetable, pattern="^admin_delete_timetable$")
+]

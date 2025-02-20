@@ -16,4 +16,6 @@ async def admin_update_timetable(update: Update, context: ContextTypes.DEFAULT_T
     )
 
 
-admin_update_timetable_handler = CallbackQueryHandler(admin_update_timetable, pattern="^admin_update_timetable$")
+admin_update_timetable_handlers = [
+    CallbackQueryHandler(admin_update_timetable, pattern="^admin_update_timetable$")
+]

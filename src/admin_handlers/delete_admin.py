@@ -50,4 +50,6 @@ async def delete_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(update.effective_chat.id, "Введите rep ID юзера, которого вы хотите удалить из админов:")
 
 
-admin_delete_admin_handler = CallbackQueryHandler(delete_admin, "^admin_delete_admin$")
+admin_delete_admin_handlers = [
+    CallbackQueryHandler(delete_admin, "^admin_delete_admin$")
+]

@@ -9,13 +9,12 @@ SUPER_ADMIN_ID = 928688258
 
 
 admin_inline_keyboard = InlineKeyboardMarkup([
+    [InlineKeyboardButton("Открыть регистрацию на турнир", callback_data="admin_open_registration")],
     [InlineKeyboardButton("Изменить ID игрока", callback_data="admin_change_public_id")],
     [InlineKeyboardButton("Добавить пост в расписание", callback_data="admin_update_timetable")],
     [InlineKeyboardButton("Удалить пост из расписания", callback_data="admin_delete_timetable")],
     [InlineKeyboardButton("Добавить пост для лагеря", callback_data="admin_add_camp")],
     [InlineKeyboardButton("Удалить пост для лагеря", callback_data="admin_delete_camp")],
-    [InlineKeyboardButton("Добавить видео", callback_data="admin_add_video")],
-    [InlineKeyboardButton("Добавить мерч", callback_data="admin_add_merch")],
     [InlineKeyboardButton("💀 Добавить нового админа", callback_data="admin_add_new_admin")],
     [InlineKeyboardButton("💀 Удалить админа", callback_data="admin_delete_admin")],
     [InlineKeyboardButton("💀 Удалить игрока из базы", callback_data="admin_delete_user")],
@@ -34,4 +33,6 @@ async def admin_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await context.bot.send_message(update.effective_chat.id, "Опции админа:", reply_markup=admin_inline_keyboard)
 
-admin_main_menu_handler = CommandHandler("admin", admin_main_menu)
+admin_main_menu_handlers = [
+    CommandHandler("admin", admin_main_menu)
+]
