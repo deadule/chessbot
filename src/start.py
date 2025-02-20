@@ -1,3 +1,5 @@
+import copy
+
 from telegram import ReplyKeyboardMarkup, Update, KeyboardButton
 from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler
 
@@ -6,10 +8,17 @@ from databaseAPI import rep_chess_db
 
 # Save it in global except database because it is faster.
 # To show camp button set "active" field to True.
+# TODO: Перенести эти данные в context.bot_data - данные, общие для бота
 camp_data = {
     "active": False,
     "channel": None,
     "message_id": None
+}
+
+active_tournament = {
+    "active": False,
+    "summary": None,
+    "date_time": None
 }
 
 
@@ -26,12 +35,16 @@ base_main_menu_reply_keyboard = ReplyKeyboardMarkup(
 
 
 def main_menu_reply_keyboard():
-    if not camp_data["active"]:
+    if not camp_data["active"] and not active_tournament["active"]:
         return base_main_menu_reply_keyboard
-    return ReplyKeyboardMarkup(
-        keyboard_buttons + [[KeyboardButton("🏕 Лагерь")]],
-        resize_keyboard=True
-    )
+
+    new_keyboard = copy(base_main_menu_reply_keyboard)
+    if camp_data["active"]:
+        new_keyboard += [[KeyboardButton("🏕 Лагерь")]]
+    if active_tournament["active"]:
+        new_keyboard += [[KeyboardButton("⚔ Зарегистрироваться")]]
+
+    return ReplyKeyboardMarkup(new_keyboard, resize_keyboard=True)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):

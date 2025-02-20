@@ -163,7 +163,7 @@ async def process_edited_post(update: Update, context: ContextTypes.DEFAULT_TYPE
     rep_chess_db.update_tournament(**tournament)
 
 
-def construct_timetable(tournaments: List[datetime.datetime]) -> str:
+def construct_timetable(tournaments: List[datetime.datetime]) -> tuple[str, InlineKeyboardMarkup]:
     result_str = "🌟  *_Анонсы_*\n"
     result_markup = []
 
