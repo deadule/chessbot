@@ -26,7 +26,7 @@ async def process_input_lichess_rating(update: Update, context: ContextTypes.DEF
         await profile_lichess_rating_handler(update, context)
         return
 
-    context.user_data["lichess_rating"] = lichess_rating
+    context.user_data["user_db_data"]["lichess_rating"] = lichess_rating
     context.user_data["text_state"] = None
     rep_chess_db.update_user_lichess_rating(update.message.from_user.id, lichess_rating)
 

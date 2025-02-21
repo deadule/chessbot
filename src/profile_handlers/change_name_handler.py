@@ -14,7 +14,7 @@ async def process_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await change_name_handler(update, context)
         return
 
-    context.user_data["name"] = name
+    context.user_data["user_db_data"]["name"] = name
     context.user_data["text_state"] = None
     rep_chess_db.update_user_name(update.message.from_user.id, name)
 

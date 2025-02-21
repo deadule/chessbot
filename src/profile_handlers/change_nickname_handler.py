@@ -14,7 +14,7 @@ async def process_input_nickname(update: Update, context: ContextTypes.DEFAULT_T
         await profile_nickname_handler(update, context)
         return
 
-    context.user_data["nickname"] = nickname
+    context.user_data["user_db_data"]["nickname"] = nickname
     context.user_data["text_state"] = None
     rep_chess_db.update_user_nickname(update.message.from_user.id, nickname)
 

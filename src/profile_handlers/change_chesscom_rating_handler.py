@@ -26,7 +26,7 @@ async def process_input_chesscom_rating(update: Update, context: ContextTypes.DE
         await profile_chesscom_rating_handler(update, context)
         return
 
-    context.user_data["chesscom_rating"] = chesscom_rating
+    context.user_data["user_db_data"]["chesscom_rating"] = chesscom_rating
     context.user_data["text_state"] = None
     rep_chess_db.update_user_chesscom_rating(update.message.from_user.id, chesscom_rating)
 

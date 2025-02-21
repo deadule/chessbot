@@ -13,7 +13,7 @@ async def process_input_surname(update: Update, context: ContextTypes.DEFAULT_TY
         context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
         await profile_surname_handler(update, context)
 
-    context.user_data["surname"] = surname
+    context.user_data["user_db_data"]["surname"] = surname
     context.user_data["text_state"] = None
     rep_chess_db.update_user_surname(update.message.from_user.id, surname)
 
