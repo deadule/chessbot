@@ -26,6 +26,9 @@ def converter_to_isoformat(date_time_b: bytes):
 sqlite3.register_converter("datetime", converter_to_isoformat)
 sqlite3.register_adapter(datetime.datetime, lambda date: date.isoformat())
 
+sqlite3.register_converter("BOOL", lambda v: bool(int(v)))
+sqlite3.register_adapter(bool, int)
+
 
 # TODO: maybe rewrite it with sqlalchemy or somehow else...
 class RepChessDB:
@@ -107,7 +110,7 @@ class RepChessDB:
                     rating_after INTEGER,
                     FOREIGN KEY (tournament_id) REFERENCES tournament (tournament_id),
                     FOREIGN KEY (user_id) REFERENCES user (public_id)
-                )
+                );
 
                 END;
                 """
@@ -378,7 +381,7 @@ class RepChessDB:
                     date_time,
                     address,
                     registration
-                ) VALUES(?, ?, ?, ?, ?, ?, ?)""",
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)""",
                 (None, tg_channel, message_id, city_id, summary, date_time, address, registration)
             )
         logger.debug(f"Insert into tournaments {message_id=} {date_time=} {address=}")
@@ -447,8 +450,8 @@ class RepChessDB:
     def get_tournament_on_id(self, tournament_id: int):
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT * FROM tournament WHERE tournament_id = """,
-                (tournament_id)
+                """SELECT * FROM tournament WHERE tournament_id = ?""",
+                (tournament_id,)
             )
         return dict(cursor.fetchone())
 
@@ -494,9 +497,25 @@ class RepChessDB:
                     user_id,
                     nickname,
                     rating_before,
-                    rating_after,
+                    rating_after
                 ) VALUES (?, ?, ?, ?, ?, ?)""",
                 (None, tournament_id, user_id, nickname, rating, None)
             )
+
+    def close_registration(self, tournament_id: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE tournament SET registration = ? WHERE tournament_id = ?""",
+                (False, tournament_id)
+            )
+
+    def get_registered_users(self, tournament_id: int) -> list:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM user_on_tournament WHERE tournament_id = ?""",
+                (tournament_id,)
+            )
+        return cursor.fetchall()
+
 
 rep_chess_db = RepChessDB()

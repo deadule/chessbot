@@ -1,5 +1,3 @@
-import copy
-
 from telegram import ReplyKeyboardMarkup, Update, KeyboardButton
 from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler
 
@@ -17,34 +15,35 @@ camp_data = {
 
 active_tournament = {
     "active": False,
+    "tournament_id": None,
     "summary": None,
     "date_time": None
 }
 
 
-keyboard_buttons = [
-    [KeyboardButton("📅  Расписание")],
-    [KeyboardButton("👤 Профиль")],
-]
+reg_main_menu_reply_keyboard = ReplyKeyboardMarkup([
+        [KeyboardButton("📅  Расписание")],
+        [KeyboardButton("👤 Профиль")],
+        [KeyboardButton("⚔ Зарегистрироваться")],
+    ],
+    resize_keyboard=True
+)
 
 
-base_main_menu_reply_keyboard = ReplyKeyboardMarkup(
-    keyboard_buttons,
+reg_camp_main_menu_reply_keyboard = ReplyKeyboardMarkup([
+        [KeyboardButton("📅  Расписание")],
+        [KeyboardButton("🏕 Лагерь")],
+        [KeyboardButton("👤 Профиль")],
+        [KeyboardButton("⚔ Зарегистрироваться")],
+    ],
     resize_keyboard=True
 )
 
 
 def main_menu_reply_keyboard():
-    if not camp_data["active"] and not active_tournament["active"]:
-        return base_main_menu_reply_keyboard
-
-    new_keyboard = copy(base_main_menu_reply_keyboard)
     if camp_data["active"]:
-        new_keyboard += [[KeyboardButton("🏕 Лагерь")]]
-    if active_tournament["active"]:
-        new_keyboard += [[KeyboardButton("⚔ Зарегистрироваться")]]
-
-    return ReplyKeyboardMarkup(new_keyboard, resize_keyboard=True)
+        return reg_camp_main_menu_reply_keyboard
+    return reg_main_menu_reply_keyboard
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):

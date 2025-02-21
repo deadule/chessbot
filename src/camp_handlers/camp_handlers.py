@@ -6,7 +6,7 @@ import start
 
 async def camp_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not start.camp_data["active"]:
-        await update.message.reply_text("В данный момент нет активного лагеря.", reply_markup=start.main_menu_reply_keyboard())
+        await update.message.reply_text("В данный момент нет активной записи в лагерь.", reply_markup=start.main_menu_reply_keyboard())
         return
 
     await context.bot.forward_message(

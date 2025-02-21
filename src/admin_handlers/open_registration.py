@@ -5,7 +5,7 @@ from telegram.ext import CallbackQueryHandler, ContextTypes
 
 from databaseAPI import rep_chess_db
 from timetable_handlers import DIGITS_EMOJI
-from start import active_tournament
+from start import main_menu_reply_keyboard, active_tournament
 
 
 def construct_short_timetable(tournaments) -> tuple[str, InlineKeyboardMarkup]:
@@ -60,9 +60,11 @@ async def open_tournament_registration(update: Update, context: ContextTypes.DEF
     active_tournament["summary"] = tournament["summary"]
     active_tournament["date_time"] = tournament["date_time"]
     active_tournament["active"] = True
-    await update.message.reply_text(
-        f"Регистрация на турнир *{active_tournament["summary"]}* открыта! Проверьте, введя /start",
-        parse_mode="markdown"
+    await context.bot.send_message(
+        update.effective_chat.id,
+        f"Регистрация на турнир *{active_tournament["summary"]}* открыта! Проверьте, что кнопка *\"⚔ Зарегистрироваться\"* работает",
+        parse_mode="markdown",
+        reply_markup=main_menu_reply_keyboard()
     )
 
 
