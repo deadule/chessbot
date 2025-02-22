@@ -6,7 +6,7 @@ from databaseAPI import rep_chess_db
 
 # Save it in global except database because it is faster.
 # To show camp button set "active" field to True.
-# TODO: Перенести эти данные в context.bot_data - данные, общие для бота
+# TODO: Возможно, перенести эти данные в context.bot_data - данные, общие для бота
 camp_data = {
     "active": False,
     "channel": None,
