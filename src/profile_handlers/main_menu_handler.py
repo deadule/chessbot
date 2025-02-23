@@ -1,12 +1,8 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import (
-    CallbackQueryHandler,
-    ContextTypes,
-    MessageHandler,
-    filters,
-)
+from telegram.ext import ContextTypes, MessageHandler, filters
 
 from databaseAPI import rep_chess_db
+from util import escape_special_symbols
 
 
 profile_inline_keyboard = InlineKeyboardMarkup([
@@ -28,10 +24,10 @@ def construct_profile_message(user_db_data: dict) -> str:
 
     profile_str = f"👤 *_Ваш профиль:_*\n ├ ID:  `{user_db_data['public_id']}`\n"
     if user_db_data['nickname']:
-        profile_str += f" ├ Ник:  `{user_db_data['nickname']}`\n"
-    profile_str +=  f" ├ Имя:  `{user_db_data['name']}`\n"
+        profile_str += f" ├ Ник:  `{escape_special_symbols(user_db_data['nickname'])}`\n"
+    profile_str +=  f" ├ Имя:  `{escape_special_symbols(user_db_data['name'])}`\n"
     if user_db_data['surname']:
-        profile_str += f" ├ Фамилия:  `{user_db_data['surname']}`\n"
+        profile_str += f" ├ Фамилия:  `{escape_special_symbols(user_db_data['surname'])}`\n"
     profile_str = change_last_symbol(profile_str, "├", "└")
     profile_str += f"\n📊 *_Статистика:_*\n"
     profile_str += f" ├ Rep рейтинг:  `{user_db_data['rep_rating']}`\n"

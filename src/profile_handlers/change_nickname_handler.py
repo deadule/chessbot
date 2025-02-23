@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes, CallbackQueryHandler
 
 from databaseAPI import rep_chess_db
 from main_menu_handler import main_menu_handler
+from util import check_string
 
 
 async def process_input_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -10,6 +11,12 @@ async def process_input_nickname(update: Update, context: ContextTypes.DEFAULT_T
     # Too long nickname
     if len(nickname) > 100:
         message = await update.message.reply_text("Слишком длинный ник. Попробуйте покороче.")
+        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
+        await profile_nickname_handler(update, context)
+        return
+
+    if not check_string(nickname):
+        message = await context.bot.send_message("Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?")
         context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
         await profile_nickname_handler(update, context)
         return

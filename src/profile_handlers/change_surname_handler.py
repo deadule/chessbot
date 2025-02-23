@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes, CallbackQueryHandler
 
 from databaseAPI import rep_chess_db
 from main_menu_handler import main_menu_handler
+from util import check_string
 
 
 async def process_input_surname(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -12,6 +13,12 @@ async def process_input_surname(update: Update, context: ContextTypes.DEFAULT_TY
         message = await update.message.reply_text("Странная фамилия. Попробуйте покороче.")
         context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
         await profile_surname_handler(update, context)
+
+    if not check_string(surname):
+        message = await context.bot.send_message("Недопустимые символы в фамилии! Разрешены только буквы, цифры, пробел, -, !, ?")
+        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
+        await profile_surname_handler(update, context)
+        return
 
     context.user_data["user_db_data"]["surname"] = surname
     context.user_data["text_state"] = None

@@ -3,6 +3,7 @@ from telegram.ext import MessageHandler, CallbackQueryHandler, filters, ContextT
 
 from start import main_menu_reply_keyboard, active_tournament
 from databaseAPI import rep_chess_db
+from util import check_string
 
 
 def construct_nickname_keyboard(nickname) -> InlineKeyboardMarkup:
@@ -53,6 +54,11 @@ async def reading_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TY
         await process_temp_nickname(update, context)
         return
 
+    if not check_string(nickname):
+        await context.bot.send_message("Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?")
+        await process_temp_nickname(update, context)
+        return
+
     context.user_data["text_state"] = None
     await context.bot.send_message(
         update.effective_chat.id,
@@ -85,7 +91,6 @@ async def ask_about_registration(update: Update, context: ContextTypes.DEFAULT_T
             "Если вы не успели зарегистрироваться, подойдите к организатору.",
             reply_markup=main_menu_reply_keyboard()
         )
-        
         return
 
     if update.message:
