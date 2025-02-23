@@ -50,7 +50,8 @@ async def open_tournament_registration(update: Update, context: ContextTypes.DEF
     tournament = rep_chess_db.get_tournament_on_id(tournament_id)
 
     if active_tournament["active"]:
-        await update.message.reply_text(
+        await context.bot.send_message(
+            update.effective_chat.id,
             "Уже есть активная регистрация на турнир! Завершите сначала регистрацию на предыдущий:\n"
             f"{active_tournament["date_time"]} - *{active_tournament["summary"]}*"
         )
