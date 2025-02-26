@@ -4,6 +4,7 @@ from change_rep_rating import admin_change_rep_rating_handlers
 from open_registration import admin_open_registration_handlers
 from close_registration import admin_close_registration_handlers
 from show_registered import admin_show_registered_handlers
+from upload_results import admin_upload_results_handlers
 from update_timetable import admin_update_timetable_handlers
 from delete_timetable import admin_delete_timetable_handlers
 from add_camp import admin_add_camp_handlers
@@ -18,6 +19,7 @@ admin_change_rep_rating_handlers + \
 admin_open_registration_handlers + \
 admin_close_registration_handlers + \
 admin_show_registered_handlers + \
+admin_upload_results_handlers + \
 admin_update_timetable_handlers + \
 admin_delete_timetable_handlers + \
 admin_add_camp_handlers + \

@@ -12,6 +12,7 @@ admin_inline_keyboard = InlineKeyboardMarkup([
     [InlineKeyboardButton("Открыть регистрацию на турнир", callback_data="admin_open_registration")],
     [InlineKeyboardButton("Закрыть регистрацию на турнир", callback_data="admin_close_registration")],
     [InlineKeyboardButton("Показать список участников", callback_data="admin_show_registered")],
+    [InlineKeyboardButton("Выгрузить результаты турнира", callback_data="admin_upload_results")],
     [InlineKeyboardButton("Изменить ID игрока", callback_data="admin_change_public_id")],
     [InlineKeyboardButton("Изменить rep-рейтинг игрока", callback_data="admin_change_rep_rating")],
     [InlineKeyboardButton("Добавить пост в расписание", callback_data="admin_update_timetable")],

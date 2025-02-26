@@ -3,14 +3,14 @@ import datetime
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
+import start
 from databaseAPI import rep_chess_db
 from timetable_handlers import DIGITS_EMOJI
-from start import main_menu_reply_keyboard, active_tournament
 
 
-def construct_short_timetable(tournaments) -> tuple[str, InlineKeyboardMarkup]:
+def construct_short_timetable(tournaments: list[tuple]) -> tuple[str, InlineKeyboardMarkup]:
     """
-    Return short timetable of all announcements from today up to last_date.
+    Return string and InlineKeyboardMarkup representing timetable of tournaments.
     """
     result_str = "🌟  *_Сегодняшние Турниры:_*\n"
     result_markup = []
@@ -49,23 +49,23 @@ async def open_tournament_registration(update: Update, context: ContextTypes.DEF
     rep_chess_db.open_registration(tournament_id)
     tournament = rep_chess_db.get_tournament_on_id(tournament_id)
 
-    if active_tournament["active"]:
+    if start.active_tournament["active"]:
         await context.bot.send_message(
             update.effective_chat.id,
             "Уже есть активная регистрация на турнир! Завершите сначала регистрацию на предыдущий:\n"
-            f"{active_tournament["date_time"]} - *{active_tournament["summary"]}*"
+            f"{start.active_tournament["date_time"]} - *{start.active_tournament["summary"]}*"
         )
         return
 
-    active_tournament["tournament_id"] = tournament["tournament_id"]
-    active_tournament["summary"] = tournament["summary"]
-    active_tournament["date_time"] = tournament["date_time"]
-    active_tournament["active"] = True
+    start.active_tournament["tournament_id"] = tournament["tournament_id"]
+    start.active_tournament["summary"] = tournament["summary"]
+    start.active_tournament["date_time"] = tournament["date_time"]
+    start.active_tournament["active"] = True
     await context.bot.send_message(
         update.effective_chat.id,
-        f"Регистрация на турнир *{active_tournament["summary"]}* открыта! Проверьте, что кнопка *\"⚔ Зарегистрироваться\"* работает",
+        f"Регистрация на турнир *{start.active_tournament["summary"]}* открыта! Проверьте, что кнопка *\"⚔ Зарегистрироваться\"* работает",
         parse_mode="markdown",
-        reply_markup=main_menu_reply_keyboard()
+        reply_markup=start.main_menu_reply_keyboard()
     )
 
 

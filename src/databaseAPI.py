@@ -97,6 +97,7 @@ class RepChessDB:
                     date_time datetime,
                     address TEXT,
                     registration BOOL,
+                    results_uploaded BOOL,
                     FOREIGN KEY (city_id) REFERENCES city (city_id)
                 );
 
@@ -107,8 +108,25 @@ class RepChessDB:
                     nickname TEXT,
                     rating_before INTEGER,
                     rating_after INTEGER,
+                    place INTEGER,
+                    score REAL,
                     FOREIGN KEY (tournament_id) REFERENCES tournament (tournament_id),
                     FOREIGN KEY (user_id) REFERENCES user (public_id)
+                );
+
+                CREATE TABLE IF NOT EXISTS game (
+                    game_id INTEGER PRIMARY KEY,
+                    tournament_id INTEGER NOT NULL,
+                    white_user_id INTEGER NOT NULL,
+                    black_user_id INTEGER NOT NULL,
+                    round INTEGER,
+                    desk_number INTEGER,
+                    result REAL,
+                    white_rating_change INTEGER,
+                    black_rating_change INTEGER,
+                    FOREIGN KEY (tournament_id) REFERENCES tournament (tournament_id),
+                    FOREIGN KEY (white_user_id) REFERENCES user (user_id),
+                    FOREIGN KEY (black_user_id) REFERENCES user (user_id)
                 );
 
                 END;
@@ -362,7 +380,8 @@ class RepChessDB:
         date_time: datetime.datetime,
         city_id: int | None = None,
         address: str | None = None,
-        registration: bool = False
+        registration: bool = False,
+        results_uploaded: bool = False
     ) -> bool:
         """
         Add new tournament if it has another (date_time, address) and
@@ -389,9 +408,10 @@ class RepChessDB:
                     summary,
                     date_time,
                     address,
-                    registration
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?)""",
-                (None, tg_channel, message_id, city_id, summary, date_time, address, registration)
+                    registration,
+                    results_uploaded
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (None, tg_channel, message_id, city_id, summary, date_time, address, registration, results_uploaded)
             )
         logger.debug(f"Insert into tournaments {message_id=} {date_time=} {address=}")
         return True
@@ -426,20 +446,25 @@ class RepChessDB:
         )
         logger.debug(f"Update tournament {tg_channel} {message_id=} {date_time=} {address=} ")
 
-    def get_tournaments(self, from_date: datetime.datetime, to_date: datetime.datetime = None) -> list:
-        if not to_date:
-            with self.conn:
-                cursor = self.conn.execute(
-                    """SELECT * FROM tournament WHERE date_time >= ? ORDER BY date_time""",
-                    (from_date,)
-                )
-            return cursor.fetchall()
+    def get_tournaments(
+        self,
+        from_date: datetime.datetime,
+        to_date: datetime.datetime | None = None,
+        upload_results: bool | None = None
+    ) -> list[tuple]:
+        request = "SELECT * FROM tournament WHERE date_time >= ?"
+        values = [from_date]
+        if to_date:
+            request += " AND date_time <= ?"
+            values.append(to_date)
+        if upload_results is not None:
+            request += " AND results_uploaded == ?"
+            values.append(upload_results)
+        request += " ORDER BY date_time"
+        values = tuple(values)
 
         with self.conn:
-            cursor = self.conn.execute(
-                """SELECT * FROM tournament WHERE date_time >= ? AND date_time <= ? ORDER BY date_time""",
-                (from_date, to_date)
-            )
+            cursor = self.conn.execute(request, values)
         return cursor.fetchall()
 
     def remove_tournament(self, tg_channel: str, message_id: int):
@@ -456,7 +481,21 @@ class RepChessDB:
                 (True, tournament_id)
             )
 
-    def get_tournament_on_id(self, tournament_id: int):
+    def close_registration(self, tournament_id: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE tournament SET registration = ? WHERE tournament_id = ?""",
+                (False, tournament_id)
+            )
+
+    def results_uploaded(self, tournament_id: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE tournament SET results_uploaded = ? WHERE tournament_id = ?""",
+                (True, tournament_id)
+            )
+
+    def get_tournament_on_id(self, tournament_id: int) -> dict:
         with self.conn:
             cursor = self.conn.execute(
                 """SELECT * FROM tournament WHERE tournament_id = ?""",
@@ -506,16 +545,11 @@ class RepChessDB:
                     user_id,
                     nickname,
                     rating_before,
-                    rating_after
-                ) VALUES (?, ?, ?, ?, ?, ?)""",
-                (None, tournament_id, user_id, nickname, rating, None)
-            )
-
-    def close_registration(self, tournament_id: int):
-        with self.conn:
-            self.conn.execute(
-                """UPDATE tournament SET registration = ? WHERE tournament_id = ?""",
-                (False, tournament_id)
+                    rating_after,
+                    place,
+                    score
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (None, tournament_id, user_id, nickname, rating, None, None, None)
             )
 
     def get_registered_users(self, tournament_id: int) -> list:
@@ -525,6 +559,51 @@ class RepChessDB:
                 (tournament_id,)
             )
         return cursor.fetchall()
+
+    def get_user_on_tournament_on_nickname(self, tournament_id: int, nickname: str) -> dict:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT user_id FROM user_on_tournament WHERE tournament_id = ? AND nickname = ?""",
+                (tournament_id, nickname)
+            )
+        return dict(cursor.fetchone())
+
+    def update_user_on_tournament(self, tournament_id: int, nickname: str, rating_after: int, place: int, score: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user_on_tournament SET rating_after = ?, place = ?, score = ?
+                WHERE tournament_id == ? AND nickname == ?""",
+                (rating_after, place, score, tournament_id, nickname)
+            )
+
+    # GAME ======================================================
+
+    def add_game(
+        self,
+        tournament_id: int,
+        white_user_id: int,
+        black_user_id: int,
+        round: int,
+        result: float,
+        desk_number: int | None = None,
+        white_rating_change: int | None = None,
+        black_rating_change: int | None = None,
+    ):
+        with self.conn:
+            self.conn.execute(
+                """INSERT INTO game (
+                    game_id,
+                    tournament_id,
+                    white_user_id,
+                    black_user_id,
+                    round,
+                    desk_number,
+                    result,
+                    white_rating_change,
+                    black_rating_change
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (None, tournament_id, white_user_id, black_user_id, round, desk_number, result, white_rating_change, black_rating_change)
+            )
 
 
 rep_chess_db = RepChessDB()

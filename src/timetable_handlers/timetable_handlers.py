@@ -7,6 +7,7 @@ from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHan
 
 from databaseAPI import rep_chess_db
 from start import main_menu_reply_keyboard
+from util import escape_special_symbols
 
 
 DIGITS_EMOJI = {
@@ -21,37 +22,6 @@ DIGITS_EMOJI = {
     8: "8⃣",
     9: "9⃣",
 }
-
-
-SPECIAL_SYMBOLS = [
-  '\\',
-  '_',
-  '*',
-  '[',
-  ']',
-  '(',
-  ')',
-  '~',
-  '`',
-  '>',
-  '<',
-  '&',
-  '#',
-  '+',
-  '-',
-  '=',
-  '|',
-  '{',
-  '}',
-  '.',
-  '!',
-]
-
-
-def escape_special_symbols(string: str) -> str:
-    for sym in SPECIAL_SYMBOLS:
-        string = string.replace(sym, f"\\{sym}")
-    return string
 
 
 def parse_tournament_post(post: str) -> dict | None:

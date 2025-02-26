@@ -50,11 +50,17 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
     """
     For flexibility we have to process all text messages from user here and
     transfer it to suitable handlers. The current function for processing update
-    is in context.user_data["text_state"]. If state = None, we can ignore message.
+    is in context.user_data["text_state"]. If text_state = None, we can ignore message.
     """
-    # If there was expectations of forwarded message - remove it.
-    if context.user_data and "forwarded_state" in context.user_data:
+    if not context.user_data:
+        update.message.reply_text("Бот обновился, введите или нажмите на команду /start")
+        return
+    # If there was expectations of other messages - remove them.
+    if "forwarded_state" in context.user_data:
         context.user_data["forwarded_state"] = None
+
+    if "file_state" in context.user_data:
+        context.user_data["file_state"] = None
 
     # The new post in group was published
     if update.channel_post:
@@ -65,7 +71,7 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
         await process_edited_post(update, context)
         return
 
-    if not context.user_data or "text_state" not in context.user_data or context.user_data["text_state"] == None:
+    if "text_state" not in context.user_data or context.user_data["text_state"] == None:
         # this is useless message from user. It is not some answer for handlers.
         logger.info(f"IGNORE MESSAGE {update.message.text}")
         return
@@ -74,11 +80,17 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def global_forwarded_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # If there was expecting of text message - remove it.
-    if context.user_data and "text_state" in context.user_data:
+    if not context.user_data:
+        update.message.reply_text("Бот обновился, введите или нажмите на команду /start")
+        return
+    # If there was expectations of other messages - remove them.
+    if "text_state" in context.user_data:
         context.user_data["text_state"] = None
 
-    if not context.user_data or "forwarded_state" not in context.user_data or context.user_data["forwarded_state"] == None:
+    if "file_state" in context.user_data:
+        context.user_data["file_state"] = None
+
+    if "forwarded_state" not in context.user_data or context.user_data["forwarded_state"] == None:
         # this is useless message from user. It is not some answer for handlers.
         if update.channel_post:
             logger.info(f"IGNORE FORWARDED channel post {update.channel_post.text}")
@@ -87,6 +99,23 @@ async def global_forwarded_message_handler(update: Update, context: ContextTypes
         return
 
     await context.user_data["forwarded_state"](update, context)
+
+
+async def global_file_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not context.user_data:
+        update.message.reply_text("Бот обновился, введите или нажмите на команду /start")
+        return
+    # If there was expectations of other messages - remove them.
+    if "forwarded_state" in context.user_data:
+        context.user_data["forwarded_state"] = None
+
+    if "text_state" in context.user_data:
+        context.user_data["text_state"] = None
+
+    if "file_state" not in context.user_data or context.user_data["file_state"] == None:
+        logger.info(f"IGNORE FILE MESSAGE {update.message}")
+
+    await context.user_data["file_state"](update, context)
 
 
 def start_tg_bot(token: str):
@@ -98,6 +127,7 @@ def start_tg_bot(token: str):
     application.add_handlers(timetable_callback_handlers)
     application.add_handlers(camp_callback_handlers)
     application.add_handlers(registration_callback_handlers)
+    application.add_handler(MessageHandler(filters.Document.ALL, global_file_message_handler))
     application.add_handler(MessageHandler(filters.FORWARDED, global_forwarded_message_handler))
     application.add_handler(MessageHandler(filters.ALL, global_message_handler))
 
@@ -105,17 +135,6 @@ def start_tg_bot(token: str):
     application.run_polling()
 
     logger.info("Bot stopped")
-
-    """
-    rep_chess_db.register_user(
-        telegram_id=1000,
-        name="Максим",
-        first_contact=datetime.datetime.now(),
-        last_contact=datetime.datetime.now(),
-        lichess_rating=1900
-    )
-    rep_chess_db.update_user_name(telegram_id=1000, name="NO Максим")
-    rep_chess_db.update_user_chesscom_rating(telegram_id=1000, chesscom_rating=1600)"""
 
 
 def main():

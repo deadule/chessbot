@@ -4,10 +4,11 @@ from telegram.ext import CallbackQueryHandler, ContextTypes
 from databaseAPI import rep_chess_db
 from admin_main_menu import admin_main_menu, SUPER_ADMIN_ID
 
+
 async def process_adding_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rep_id = update.message.text
     if not rep_id.isdigit():
-        await update.message.reply_text("*Не похоже на ID\.\.\.*", parse_mode="MarkdownV2", disable_web_page_preview=True)
+        await update.message.reply_text("*Не похоже на ID\.\.\.*", parse_mode="MarkdownV2")
         await admin_add_new_admin(update, context)
         return
 
