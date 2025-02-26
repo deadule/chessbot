@@ -28,9 +28,6 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
     """
     number_of_tours = int(max(tour for tour in results[0].keys() if tour.startswith("Тур #")).split("#")[1])
     for row in results:
-        # TODO: костыль для одного турнира, убрать в следующем коммите
-        if float(row["Очки"].strip().replace(",", ".")) > 3.6:
-            continue
         nickname = row["Имя"].strip()
         user_id = rep_chess_db.get_user_on_tournament_on_nickname(tournament_id, nickname)["user_id"]
         games_played = 0
