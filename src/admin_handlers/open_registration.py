@@ -63,7 +63,7 @@ async def open_tournament_registration(update: Update, context: ContextTypes.DEF
     start.active_tournament["active"] = True
     await context.bot.send_message(
         update.effective_chat.id,
-        f"Регистрация на турнир *{start.active_tournament["summary"]}* открыта! Проверьте, что кнопка *\"⚔ Зарегистрироваться\"* работает",
+        f"Регистрация на турнир *{start.active_tournament["summary"]}* открыта! Проверьте, что кнопка *\"⚔ Записаться на турнир\"* работает",
         parse_mode="markdown",
         reply_markup=start.main_menu_reply_keyboard()
     )

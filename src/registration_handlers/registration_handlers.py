@@ -100,7 +100,7 @@ async def ask_about_registration(update: Update, context: ContextTypes.DEFAULT_T
         await context.bot.send_message(
             update.effective_chat.id,
             "Сейчас нет активной регистрации! Регистрация открывается за несколько минут до начала турнира.\n\n"
-            "Если вы не успели зарегистрироваться, подойдите к организатору.",
+            "Если вы не успели записаться, подойдите к организатору.",
             reply_markup=main_menu_reply_keyboard()
         )
         return
@@ -115,7 +115,7 @@ async def ask_about_registration(update: Update, context: ContextTypes.DEFAULT_T
     nickname = context.user_data["user_db_data"]["nickname"]
     await context.bot.send_message(
         update.effective_chat.id,
-        f"Вы хотите зарегистрироваться на турнир\n{active_tournament["date_time"]} "
+        f"Вы хотите записаться на турнир\n{active_tournament["date_time"]} "
         f" *{active_tournament["summary"]}*\n\nВы уверены в этом?\n\n"
         "Тогда выберите свой постоянный ник или введите одноразовый:",
         reply_markup=construct_nickname_keyboard(nickname),
@@ -124,7 +124,7 @@ async def ask_about_registration(update: Update, context: ContextTypes.DEFAULT_T
 
 
 registration_callback_handlers = [
-    MessageHandler(filters.Regex("^⚔ Зарегистрироваться$"), ask_about_registration),
+    MessageHandler(filters.Regex("^⚔ Записаться на турнир$"), ask_about_registration),
     CallbackQueryHandler(process_permanent_nickname, "^permanent_nickname:"),
     CallbackQueryHandler(process_temp_nickname, "^temporarily_nickname$"),
 ]

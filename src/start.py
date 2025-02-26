@@ -24,7 +24,7 @@ active_tournament = {
 reg_main_menu_reply_keyboard = ReplyKeyboardMarkup([
         [KeyboardButton("📅  Расписание")],
         [KeyboardButton("👤 Профиль")],
-        [KeyboardButton("⚔ Зарегистрироваться")],
+        [KeyboardButton("⚔ Записаться на турнир")],
     ],
     resize_keyboard=True
 )
@@ -32,9 +32,8 @@ reg_main_menu_reply_keyboard = ReplyKeyboardMarkup([
 
 reg_camp_main_menu_reply_keyboard = ReplyKeyboardMarkup([
         [KeyboardButton("📅  Расписание")],
-        [KeyboardButton("🏕 Лагерь")],
-        [KeyboardButton("👤 Профиль")],
-        [KeyboardButton("⚔ Зарегистрироваться")],
+        [KeyboardButton("👤 Профиль"), KeyboardButton("🏕 Лагерь")],
+        [KeyboardButton("⚔ Записаться на турнир")],
     ],
     resize_keyboard=True
 )
