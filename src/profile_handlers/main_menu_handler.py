@@ -6,11 +6,17 @@ from util import escape_special_symbols
 
 
 profile_inline_keyboard = InlineKeyboardMarkup([
-    [InlineKeyboardButton("📝  Ник", callback_data="profile_nickname")],
-    [InlineKeyboardButton("📝  Имя", callback_data="profile_name")],
-    [InlineKeyboardButton("📝  Фамилия", callback_data="profile_surname")],
-    [InlineKeyboardButton("♞  Рейтинг lichess", callback_data="profile_lichess_rating")],
-    [InlineKeyboardButton("♟️  Рейтинг chess.com", callback_data="profile_chesscom_rating")],
+    [
+        InlineKeyboardButton("📝  Ник", callback_data="profile_nickname"),
+        InlineKeyboardButton("📝  Имя", callback_data="profile_name"),
+    ],
+    [
+        InlineKeyboardButton("📝  Фамилия", callback_data="profile_surname"),
+    ],
+    [
+        InlineKeyboardButton("♞  lichess", callback_data="profile_lichess_rating"),
+        InlineKeyboardButton("♟️  chess.com", callback_data="profile_chesscom_rating")
+    ],
     [InlineKeyboardButton("<< Назад", callback_data="go_main_menu")],
 ])
 
