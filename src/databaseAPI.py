@@ -85,6 +85,7 @@ class RepChessDB:
                     lichess_rating INTEGER,
                     chesscom_rating INTEGER,
                     rep_rating INTEGER,
+                    games_played INTEGER,
                     FOREIGN KEY (city_id) REFERENCES city (city_id)
                 );
 
@@ -110,6 +111,7 @@ class RepChessDB:
                     rating_after INTEGER,
                     place INTEGER,
                     score REAL,
+                    k_factor INTEGER,
                     FOREIGN KEY (tournament_id) REFERENCES tournament (tournament_id),
                     FOREIGN KEY (user_id) REFERENCES user (public_id)
                 );
@@ -171,6 +173,7 @@ class RepChessDB:
         lichess_rating: int | None = None,
         chesscom_rating: int | None = None,
         rep_rating: int = 1600,
+        games_played: int = 0,
     ):
         """
         Register user if user with given telegram_id doesn't exist.
@@ -193,8 +196,9 @@ class RepChessDB:
                     last_contact,
                     lichess_rating,
                     chesscom_rating,
-                    rep_rating
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    rep_rating,
+                    games_played
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (None,
                  telegram_id,
                  public_id,
@@ -207,7 +211,8 @@ class RepChessDB:
                  last_contact,
                  lichess_rating,
                  chesscom_rating,
-                 rep_rating)
+                 rep_rating,
+                 games_played)
             )
         logger.debug(f"register user {telegram_id}, {public_id}, {is_admin}, {name}, {surname}, {nickname}, {city_id}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating}")
 
@@ -302,6 +307,13 @@ class RepChessDB:
                 (datetime.datetime.now(), telegram_id)
             )
         logger.debug(f"update user last contact {telegram_id=}")
+
+    def update_user_games_played(self, user_id: int, games_played: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET games_played = games_played + ? WHERE user_id == ?""",
+                (games_played, user_id)
+            )
 
     def get_user_on_telegram_id(self, telegram_id: int) -> dict:
         with self.conn:
@@ -522,7 +534,7 @@ class RepChessDB:
 
     # USER_ON_TOURNAMENT ===========================================
 
-    def add_user_on_tournament(self, user_id: int, tournament_id: int, nickname: str, rating: int):
+    def add_user_on_tournament(self, user_id: int, tournament_id: int, nickname: str, rating: int, k_factor: int):
         with self.conn:
             cursor = self.conn.execute(
                 """SELECT * FROM user_on_tournament WHERE user_id = ? AND tournament_id = ?""",
@@ -547,9 +559,10 @@ class RepChessDB:
                     rating_before,
                     rating_after,
                     place,
-                    score
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (None, tournament_id, user_id, nickname, rating, None, None, None)
+                    score,
+                    k_factor
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (None, tournament_id, user_id, nickname, rating, None, None, None, k_factor)
             )
 
     def get_registered_users(self, tournament_id: int) -> list:

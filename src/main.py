@@ -53,7 +53,7 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
     is in context.user_data["text_state"]. If text_state = None, we can ignore message.
     """
     if not context.user_data:
-        update.message.reply_text("Бот обновился, введите или нажмите на команду /start")
+        context.bot.send_message(update.effective_chat.id, "Бот обновился, введите или нажмите на команду /start")
         return
     # If there was expectations of other messages - remove them.
     if "forwarded_state" in context.user_data:

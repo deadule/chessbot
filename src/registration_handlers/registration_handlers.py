@@ -39,11 +39,17 @@ async def process_permanent_nickname(update: Update, context: ContextTypes.DEFAU
         reply_markup=main_menu_reply_keyboard()
     )
 
+    games_played = context.user_data["user_db_data"]["games_played"]
+    if games_played < 20:
+        k_factor = 90 - games_played * 3
+    else:
+        k_factor = 30
     rep_chess_db.add_user_on_tournament(
         context.user_data["user_db_data"]["user_id"],
         active_tournament["tournament_id"],
-        nickname=nickname,
-        rating=context.user_data["user_db_data"]["rep_rating"]
+        nickname,
+        context.user_data["user_db_data"]["rep_rating"],
+        k_factor
     )
 
 
@@ -66,11 +72,17 @@ async def reading_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TY
         reply_markup=main_menu_reply_keyboard()
     )
 
+    games_played = context.user_data["user_db_data"]["games_played"]
+    if games_played < 20:
+        k_factor = 90 - games_played * 3
+    else:
+        k_factor = 30
     rep_chess_db.add_user_on_tournament(
         context.user_data["user_db_data"]["user_id"],
         active_tournament["tournament_id"],
-        nickname=nickname,
-        rating=context.user_data["user_db_data"]["rep_rating"]
+        nickname,
+        context.user_data["user_db_data"]["rep_rating"],
+        k_factor
     )
 
 

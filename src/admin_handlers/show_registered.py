@@ -21,7 +21,7 @@ async def admin_show_registered(update: Update, context: ContextTypes.DEFAULT_TY
 
     registered_list = ""
     for user_on_tournament in rep_chess_db.get_registered_users(active_tournament["tournament_id"]):
-        registered_list += f"{user_on_tournament[3]}, {user_on_tournament[4]}\n"
+        registered_list += f"{user_on_tournament[3]}, , {user_on_tournament[4]}, {user_on_tournament[8]}\n"
 
     if not registered_list:
         registered_list = "Упс... Ни одного участника не зарегистрировалось."

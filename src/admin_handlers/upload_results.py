@@ -30,12 +30,14 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
     for row in results:
         nickname = row["Имя"].strip()
         user_id = rep_chess_db.get_user_on_tournament_on_nickname(tournament_id, nickname)["user_id"]
+        games_played = 0
 
         for tour_number in range(1, number_of_tours + 1):
             str_res = row[f"Тур #{tour_number}"].strip()
             print(row, tour_number, str_res)
             if not str_res:
                 continue
+            games_played += 1
             float_res = result_mapping[str_res[0]]
             if "W" in str_res:
                 black_user_id = rep_chess_db.get_user_on_tournament_on_nickname(tournament_id, results[int(str_res.split("W")[1]) - 1]["Имя"].strip())["user_id"]
@@ -52,6 +54,7 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
             int(row["#"].strip()),
             float(row["Очки"].strip())
         )
+        rep_chess_db.update_user_games_played(user_id, games_played)
         rep_chess_db.update_user_rep_rating_with_user_id(user_id, new_rating)
 
 
