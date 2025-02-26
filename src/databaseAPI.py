@@ -5,6 +5,7 @@ import os
 import sys
 from collections import deque
 
+
 logger = logging.getLogger(__name__)
 logfile_dir = os.getenv("REPCHESS_LOG_DIR")
 logger_handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
@@ -462,16 +463,16 @@ class RepChessDB:
         self,
         from_date: datetime.datetime,
         to_date: datetime.datetime | None = None,
-        upload_results: bool | None = None
+        results_uploaded: bool | None = None
     ) -> list[tuple]:
         request = "SELECT * FROM tournament WHERE date_time >= ?"
         values = [from_date]
         if to_date:
             request += " AND date_time <= ?"
             values.append(to_date)
-        if upload_results is not None:
+        if results_uploaded is not None:
             request += " AND results_uploaded == ?"
-            values.append(upload_results)
+            values.append(results_uploaded)
         request += " ORDER BY date_time"
         values = tuple(values)
 

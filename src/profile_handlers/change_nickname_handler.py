@@ -16,7 +16,7 @@ async def process_input_nickname(update: Update, context: ContextTypes.DEFAULT_T
         return
 
     if not check_string(nickname):
-        message = await context.bot.send_message("Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?")
+        message = await context.bot.send_message(update.effective_chat.id, "Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?")
         context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
         await profile_nickname_handler(update, context)
         return

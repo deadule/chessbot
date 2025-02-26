@@ -61,7 +61,7 @@ async def reading_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TY
         return
 
     if not check_string(nickname):
-        await context.bot.send_message("Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?")
+        await context.bot.send_message(update.effective_chat.id, "Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?")
         await process_temp_nickname(update, context)
         return
 

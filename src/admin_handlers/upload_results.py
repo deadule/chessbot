@@ -28,6 +28,9 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
     """
     number_of_tours = int(max(tour for tour in results[0].keys() if tour.startswith("Тур #")).split("#")[1])
     for row in results:
+        # TODO: костыль для одного турнира, убрать в следующем коммите
+        if float(row["Очки"].strip().replace(",", ".")) > 3.6:
+            continue
         nickname = row["Имя"].strip()
         user_id = rep_chess_db.get_user_on_tournament_on_nickname(tournament_id, nickname)["user_id"]
         games_played = 0
@@ -52,11 +55,10 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
             nickname,
             new_rating,
             int(row["#"].strip()),
-            float(row["Очки"].strip())
+            float(row["Очки"].strip().replace(",", "."))
         )
         rep_chess_db.update_user_games_played(user_id, games_played)
         rep_chess_db.update_user_rep_rating_with_user_id(user_id, new_rating)
-
 
 
 def construct_short_timetable(tournaments: list[tuple]) -> tuple[str, InlineKeyboardMarkup]:
@@ -130,7 +132,7 @@ async def admin_upload_results(update: Update, context: ContextTypes.DEFAULT_TYP
     today_start = datetime.datetime(today.year, today.month, today.day, 0, 0, 0)
     yesterday = today_start - datetime.timedelta(days=1)
     today_end = datetime.datetime(today.year, today.month, today.day, 23, 59, 59)
-    tournaments = rep_chess_db.get_tournaments(yesterday, today_end, upload_results=False)
+    tournaments = rep_chess_db.get_tournaments(yesterday, today_end, results_uploaded=False)
     message, keyboard = construct_short_timetable(tournaments)
     await context.bot.send_message(update.effective_chat.id, message, reply_markup=keyboard, parse_mode="MarkdownV2")
 
