@@ -33,6 +33,12 @@ async def process_permanent_nickname(update: Update, context: ContextTypes.DEFAU
         )
         await ask_about_registration(update, context)
         return
+
+    if nickname in context.bot_data[f"tournament_{active_tournament["tournament_id"]}"]:
+        await context.bot.send_message(update.effective_chat.id, "Увы, такой ник уже используется в этом турнире! Попробуйте другой")
+        await ask_about_registration(update, context)
+        return
+
     await context.bot.send_message(
         update.effective_chat.id,
         "Вы успешно зарегистрированы. Удачи на турнире!",
@@ -65,6 +71,12 @@ async def reading_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TY
         await process_temp_nickname(update, context)
         return
 
+    if nickname in context.bot_data[f"tournament_{active_tournament["tournament_id"]}"]:
+        await context.bot.send_message(update.effective_chat.id, "Увы, такой ник уже используется в этом турнире! Попробуйте другой")
+        await process_temp_nickname(update, context)
+        return
+
+    context.bot_data[f"tournament_{active_tournament["tournament_id"]}"].add(nickname)
     context.user_data["text_state"] = None
     await context.bot.send_message(
         update.effective_chat.id,
