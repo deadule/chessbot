@@ -123,7 +123,8 @@ async def global_file_message_handler(update: Update, context: ContextTypes.DEFA
 
 
 def start_tg_bot(token: str):
-    application = ApplicationBuilder().token(token).build()
+    prs = PicklePersistence(filepath=".bot_data_cache")
+    application = ApplicationBuilder().token(token).persistence(persistence=prs).build()
 
     application.add_handlers(start_handlers)
     application.add_handlers(admin_callback_handlers)
