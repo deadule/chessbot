@@ -8,6 +8,7 @@ from telegram.ext import (
     ContextTypes,
     MessageHandler,
     filters,
+    PicklePersistence,
 )
 
 
@@ -52,16 +53,6 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
     transfer it to suitable handlers. The current function for processing update
     is in context.user_data["text_state"]. If text_state = None, we can ignore message.
     """
-    if not context.user_data:
-        context.bot.send_message(update.effective_chat.id, "Бот обновился, введите или нажмите на команду /start")
-        return
-    # If there was expectations of other messages - remove them.
-    if "forwarded_state" in context.user_data:
-        context.user_data["forwarded_state"] = None
-
-    if "file_state" in context.user_data:
-        context.user_data["file_state"] = None
-
     # The new post in group was published
     if update.channel_post:
         await process_new_post(update, context)
@@ -70,6 +61,16 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
     if update.edited_channel_post:
         await process_edited_post(update, context)
         return
+
+    if not context.user_data:
+        await context.bot.send_message(update.effective_chat.id, "Бот обновился, введите или нажмите на команду /start")
+        return
+    # If there was expectations of other messages - remove them.
+    if "forwarded_state" in context.user_data:
+        context.user_data["forwarded_state"] = None
+
+    if "file_state" in context.user_data:
+        context.user_data["file_state"] = None
 
     if "text_state" not in context.user_data or context.user_data["text_state"] == None:
         # this is useless message from user. It is not some answer for handlers.
@@ -80,6 +81,9 @@ async def global_message_handler(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def global_forwarded_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # If it is forwarded message in channel - just ignore it.
+    if update.channel_post or update.edited_channel_post:
+        return
     if not context.user_data:
         update.message.reply_text("Бот обновился, введите или нажмите на команду /start")
         return
