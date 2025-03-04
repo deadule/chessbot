@@ -34,8 +34,12 @@ async def process_changing_public_id(update: Update, context: ContextTypes.DEFAU
         await send_error_and_resume(update, context, "Новый ID не попадает в диапазон")
         return
 
-    is_free = rep_chess_db.update_user_public_id(old_id, new_id)
-    if not is_free:
+    ret = rep_chess_db.update_user_public_id(old_id, new_id)
+    if ret == None:
+        await send_error_and_resume(update, context, "Пользователя с таким ID не существует, попробуйте ещё раз")
+        return
+
+    if ret == False:
         await send_error_and_resume(update, context, "Этот ID уже занят игроком, попробуйте другой")
         return
 

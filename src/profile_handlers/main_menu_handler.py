@@ -1,14 +1,30 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes, MessageHandler, filters
+from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 from databaseAPI import rep_chess_db
 from util import escape_special_symbols
-from change_profile_handler import change_profile_keyboard
 
 
 profile_keyboard = InlineKeyboardMarkup([
-    [InlineKeyboardButton("📝  Поменять данные", callback_data="change_profile_data")],
+    [InlineKeyboardButton("⚙  Поменять данные", callback_data="change_profile_data")],
     [InlineKeyboardButton("<< Назад", callback_data="go_main_menu")],
+])
+
+
+change_profile_keyboard = InlineKeyboardMarkup([
+    [
+        InlineKeyboardButton("📝  Ник", callback_data="profile_nickname"),
+        InlineKeyboardButton("📝  Возраст", callback_data="profile_age"),
+    ],
+    [
+        InlineKeyboardButton("📝  Имя", callback_data="profile_name"),
+        InlineKeyboardButton("📝  Фамилия", callback_data="profile_surname"),
+    ],
+    [
+        InlineKeyboardButton("♞  lichess", callback_data="profile_lichess_rating"),
+        InlineKeyboardButton("♟️  chess.com", callback_data="profile_chesscom_rating")
+    ],
+    [InlineKeyboardButton("<< Назад", callback_data="go_main_profile")],
 ])
 
 
@@ -16,12 +32,13 @@ async def change_profile_data(update: Update, context: ContextTypes.DEFAULT_TYPE
     query = update.callback_query
     await query.answer()
 
-    context.bot.send_message(
+    message = await context.bot.send_message(
         update.effective_chat.id,
         "_Вы можете поменять свои данные:_",
         parse_mode="markdown",
         reply_markup=change_profile_keyboard
     )
+    context.user_data["messages_to_delete"].append(message.message_id)
 
 
 def construct_profile_message(user_db_data: dict) -> str:
@@ -50,8 +67,17 @@ def construct_profile_message(user_db_data: dict) -> str:
     return profile_str
 
 
+async def callback_main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await main_menu_handler(update, context)
+
+
 async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    telegram_id = update.message.from_user.id
+    if update.message:
+        telegram_id = update.message.from_user.id
+    else:
+        telegram_id = update.callback_query.from_user.id
     user_db_data = rep_chess_db.get_user_on_telegram_id(telegram_id)
     rep_chess_db.update_user_last_contact(telegram_id)
 
@@ -67,7 +93,8 @@ async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["messages_to_delete"] = []
 
     profile_str = construct_profile_message(user_db_data)
-    message = await update.message.reply_text(
+    message = await context.bot.send_message(
+        update.effective_chat.id,
         profile_str,
         parse_mode="MarkdownV2",
         disable_web_page_preview=True,
@@ -76,4 +103,8 @@ async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["messages_to_delete"].append(message.message_id)
 
 
-profile_main_menu_handler = MessageHandler(filters.Regex("^👤 Профиль$"), main_menu_handler)
+profile_main_menu_handlers = [
+    MessageHandler(filters.Regex("^👤 Профиль$"), main_menu_handler),
+    CallbackQueryHandler(change_profile_data, pattern="^change_profile_data$"),
+    CallbackQueryHandler(callback_main_menu_handler, pattern="^go_main_profile$")
+]

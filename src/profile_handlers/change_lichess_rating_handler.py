@@ -47,11 +47,10 @@ async def profile_lichess_rating_handler(update: Update, context: ContextTypes.D
     # save handler for text message
     context.user_data["text_state"] = process_input_lichess_rating
 
-    message = await context.bot.send_message(update.effective_chat.id, "*Введите новый рейтинг [lichess](https://lichess.org/):*", parse_mode="markdown", disable_web_page_preview=True)
+    message = await context.bot.send_message(update.effective_chat.id, "*Введите новый рейтинг [lichess](https://lichess.org/):*", parse_mode="MarkdownV2", disable_web_page_preview=True)
     context.user_data["messages_to_delete"].append(message.message_id)
 
 
-profile_change_lichess_rating_handler = CallbackQueryHandler(
-    profile_lichess_rating_handler,
-    pattern="^profile_lichess_rating$"
-)
+profile_change_lichess_rating_handlers = [
+    CallbackQueryHandler(profile_lichess_rating_handler, pattern="^profile_lichess_rating$")
+]

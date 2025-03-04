@@ -47,11 +47,10 @@ async def profile_chesscom_rating_handler(update: Update, context: ContextTypes.
     # save handler for text message
     context.user_data["text_state"] = process_input_chesscom_rating
 
-    message = await context.bot.send_message(update.effective_chat.id, "*Введите новый рейтинг [chess\.com](https://chess.com/):*", parse_mode="markdown", disable_web_page_preview=True)
+    message = await context.bot.send_message(update.effective_chat.id, "*Введите новый рейтинг [chess\.com](https://chess.com/):*", parse_mode="MarkdownV2", disable_web_page_preview=True)
     context.user_data["messages_to_delete"].append(message.message_id)
 
 
-profile_change_chesscom_rating_handler = CallbackQueryHandler(
-    profile_chesscom_rating_handler,
-    pattern="^profile_chesscom_rating$"
-)
+profile_change_chesscom_rating_handlers = [
+    CallbackQueryHandler(profile_chesscom_rating_handler, pattern="^profile_chesscom_rating$")
+]

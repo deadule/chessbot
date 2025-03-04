@@ -47,7 +47,6 @@ async def profile_age_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     context.user_data["messages_to_delete"].append(message.message_id)
 
 
-profile_change_age_handler = CallbackQueryHandler(
-    profile_age_handler,
-    pattern="^profile_age$"
-)
+profile_change_age_handlers = [
+    CallbackQueryHandler(profile_age_handler, pattern="^profile_age$")
+]

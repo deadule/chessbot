@@ -223,6 +223,7 @@ class RepChessDB:
     def update_user_public_id(self, old_public_id: int, public_id: int) -> bool:
         """
         Return False if public_id is already occupied.
+        Return None if user with old_public_id is not present.
         Otherwise return True.
         """
         with self.conn:
@@ -232,6 +233,14 @@ class RepChessDB:
             )
         if cursor.fetchone():
             return False
+
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT public_id FROM user WHERE public_id = ?""",
+                (old_public_id,)
+            )
+        if cursor.fetchone():
+            return
 
         with self.conn:
             self.conn.execute(

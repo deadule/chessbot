@@ -43,7 +43,6 @@ async def profile_surname_handler(update: Update, context: ContextTypes.DEFAULT_
     context.user_data["messages_to_delete"].append(message.message_id)
 
 
-profile_change_surname_handler = CallbackQueryHandler(
-    profile_surname_handler,
-    pattern="^profile_surname$"
-)
+profile_change_surname_handlers = [
+    CallbackQueryHandler(profile_surname_handler, pattern="^profile_surname$")
+]

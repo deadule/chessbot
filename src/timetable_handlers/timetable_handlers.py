@@ -133,7 +133,7 @@ async def process_edited_post(update: Update, context: ContextTypes.DEFAULT_TYPE
     rep_chess_db.update_tournament(**tournament)
 
 
-def construct_timetable(tournaments: List[datetime.datetime]) -> tuple[str, InlineKeyboardMarkup]:
+def construct_timetable(tournaments: List[datetime.datetime]) -> tuple[str, list[InlineKeyboardButton]]:
     result_str = "🌟  *_Анонсы_*\n"
     result_markup = []
 
@@ -147,7 +147,7 @@ def construct_timetable(tournaments: List[datetime.datetime]) -> tuple[str, Inli
         result_markup[-1].append(InlineKeyboardButton(text_number, callback_data=f"timetable_tournament:{tournament[1]}:{tournament[2]}"))
     result_markup.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])
 
-    return result_str, InlineKeyboardMarkup(result_markup)
+    return result_str, result_markup
 
 
 async def tournament_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -156,19 +156,40 @@ async def tournament_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
     _, channel, message_id = query.data.split(":")
 
     await context.bot.forward_message(update.effective_chat.id, "@" + channel, int(message_id))
-    await context.bot.send_message(update.effective_chat.id, "🌟  Анонсы", reply_markup=context.user_data["timetable_markup"])
+    short_timetable_buttons = context.user_data["timetable_buttons"][:-1] + [[InlineKeyboardButton("<< Назад", callback_data="go_main_timetable")]]
+    await context.bot.send_message(
+        update.effective_chat.id,
+        "🌟  *_Анонсы_*",
+        reply_markup=InlineKeyboardMarkup(short_timetable_buttons),
+        parse_mode="MarkdownV2"
+    )
+
+
+async def callback_main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await main_message_handler(update, context)
 
 
 async def main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    rep_chess_db.update_user_last_contact(update.message.from_user.id)
+    if update.message:
+        telegram_id = update.message.from_user.id
+    else:
+        telegram_id = update.callback_query.from_user.id
+    rep_chess_db.update_user_last_contact(telegram_id)
 
     today = datetime.date.today()
     tournaments = rep_chess_db.get_tournaments(datetime.datetime(today.year, today.month, today.day, 0, 0, 0))
-    message, inline_markup = construct_timetable(tournaments)
-    context.user_data["timetable_markup"] = inline_markup
+    message, inline_markup_buttons = construct_timetable(tournaments)
+    context.user_data["timetable_buttons"] = inline_markup_buttons
     # TODO: Наверное, вещи по типу channel.username можно сохранять в context.
     photo_file_id = rep_chess_db.get_photo_id()
-    await context.bot.send_photo(update.effective_chat.id, photo_file_id, caption=message, reply_markup=inline_markup, parse_mode="MarkdownV2")
+    await context.bot.send_photo(
+        update.effective_chat.id,
+        photo_file_id,
+        caption=message,
+        reply_markup=InlineKeyboardMarkup(inline_markup_buttons),
+        parse_mode="MarkdownV2")
 
 
 timetable_main_message_handler = MessageHandler(filters.Regex("^📅  Расписание$"), main_message_handler)
@@ -177,4 +198,5 @@ timetable_main_message_handler = MessageHandler(filters.Regex("^📅  Распи
 timetable_callback_handlers = [
     MessageHandler(filters.Regex("^📅  Расписание$"), main_message_handler),
     CallbackQueryHandler(tournament_handler, pattern="^timetable_tournament:*"),
+    CallbackQueryHandler(callback_main_message_handler, pattern="^go_main_timetable$")
 ]
