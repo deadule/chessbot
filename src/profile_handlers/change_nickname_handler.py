@@ -38,11 +38,11 @@ async def profile_nickname_handler(update: Update, context: ContextTypes.DEFAULT
     # save handler for text message
     context.user_data["text_state"] = process_input_nickname
 
-    message = await context.bot.send_message(update.effective_chat.id, "*Введите ник:*", parse_mode="MarkdownV2")
+    message = await context.bot.send_message(update.effective_chat.id, "*Введите ник:*", parse_mode="markdown")
     context.user_data["messages_to_delete"].append(message.message_id)
 
 
 profile_change_nickname_handler = CallbackQueryHandler(
     profile_nickname_handler,
-    pattern="profile_nickname"
+    pattern="^profile_nickname$"
 )

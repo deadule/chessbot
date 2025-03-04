@@ -39,11 +39,11 @@ async def change_name_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
     # save handler for text message
     context.user_data["text_state"] = process_input_name
 
-    message = await context.bot.send_message(update.effective_chat.id, "*Введите имя:*", parse_mode="MarkdownV2")
+    message = await context.bot.send_message(update.effective_chat.id, "*Введите имя:*", parse_mode="markdown")
     context.user_data["messages_to_delete"].append(message.message_id)
 
 
 profile_change_name_handler = CallbackQueryHandler(
     change_name_handler,
-    pattern="profile_name",
+    pattern="^profile_name$",
 )

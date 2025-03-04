@@ -87,6 +87,7 @@ class RepChessDB:
                     chesscom_rating INTEGER,
                     rep_rating INTEGER,
                     games_played INTEGER,
+                    age INTEGER,
                     FOREIGN KEY (city_id) REFERENCES city (city_id)
                 );
 
@@ -175,6 +176,7 @@ class RepChessDB:
         chesscom_rating: int | None = None,
         rep_rating: int = 1600,
         games_played: int = 0,
+        age: int | None = None
     ):
         """
         Register user if user with given telegram_id doesn't exist.
@@ -198,8 +200,9 @@ class RepChessDB:
                     lichess_rating,
                     chesscom_rating,
                     rep_rating,
-                    games_played
-                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    games_played,
+                    age
+                ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (None,
                  telegram_id,
                  public_id,
@@ -213,9 +216,10 @@ class RepChessDB:
                  lichess_rating,
                  chesscom_rating,
                  rep_rating,
-                 games_played)
+                 games_played,
+                 age)
             )
-        logger.debug(f"register user {telegram_id}, {public_id}, {is_admin}, {name}, {surname}, {nickname}, {city_id}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating}")
+        logger.debug(f"register user {telegram_id}, {public_id}, {is_admin}, {name}, {surname}, {nickname}, {city_id}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating} {age}")
 
     def update_user_public_id(self, old_public_id: int, public_id: int) -> bool:
         """
@@ -315,6 +319,14 @@ class RepChessDB:
                 """UPDATE user SET games_played = games_played + ? WHERE user_id == ?""",
                 (games_played, user_id)
             )
+
+    def update_user_age(self, telegram_id: int, age: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET age = ?, last_contact = ? WHERE telegram_id = ?""",
+                (age, datetime.datetime.now(), telegram_id)
+            )
+        logger.debug(f"update lichess rating {telegram_id=}, {age=}")
 
     def get_user_on_telegram_id(self, telegram_id: int) -> dict:
         with self.conn:

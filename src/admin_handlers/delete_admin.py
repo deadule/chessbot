@@ -8,7 +8,7 @@ from admin_main_menu import SUPER_ADMIN_ID, admin_main_menu
 async def process_deleting_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rep_id = update.message.text
     if not rep_id.isdigit():
-        await update.message.reply_text("*Не похоже на ID\.\.\.*", parse_mode="MarkdownV2", disable_web_page_preview=True)
+        await update.message.reply_text("Не похоже на ID...")
         await delete_admin(update, context)
         return
 

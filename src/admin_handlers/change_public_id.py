@@ -47,9 +47,9 @@ async def admin_change_public_id(update: Update, context: ContextTypes.DEFAULT_T
     context.user_data["text_state"] = process_changing_public_id
     await context.bot.send_message(
         update.effective_chat.id,
-        "Введите *два* rep ID игрока через *пробел*: сначала старый ID, потом через пробел новый ID\.\n"
+        "Введите *два* rep ID игрока через *пробел*: сначала старый ID, потом через пробел новый ID.\n"
          "ID должен быть в диапазоне от 1 до 99999",
-        parse_mode="MarkdownV2"
+        parse_mode="markdown"
     )
 
 

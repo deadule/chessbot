@@ -37,11 +37,11 @@ async def profile_surname_handler(update: Update, context: ContextTypes.DEFAULT_
     # save handler for text message
     context.user_data["text_state"] = process_input_surname
 
-    message = await context.bot.send_message(update.effective_chat.id, "*Введите фамилию:*", parse_mode="MarkdownV2")
+    message = await context.bot.send_message(update.effective_chat.id, "*Введите фамилию:*", parse_mode="markdown")
     context.user_data["messages_to_delete"].append(message.message_id)
 
 
 profile_change_surname_handler = CallbackQueryHandler(
     profile_surname_handler,
-    pattern="profile_surname"
+    pattern="^profile_surname$"
 )

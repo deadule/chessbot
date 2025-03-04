@@ -8,7 +8,7 @@ from admin_main_menu import admin_main_menu, SUPER_ADMIN_ID
 async def process_adding_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rep_id = update.message.text
     if not rep_id.isdigit():
-        await update.message.reply_text("*Не похоже на ID\.\.\.*", parse_mode="MarkdownV2")
+        await update.message.reply_text("Не похоже на ID...")
         await admin_add_new_admin(update, context)
         return
 
