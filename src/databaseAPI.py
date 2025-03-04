@@ -287,23 +287,13 @@ class RepChessDB:
             )
         logger.debug(f"update chesscom_rating {telegram_id=}, {chesscom_rating=}")
 
-    def update_user_rep_rating_with_rep_id(self, public_id: int, rep_rating: int):
-        with self.conn:
-            cursour = self.conn.execute(
-                """UPDATE user SET rep_rating = ?, last_contact = ? WHERE public_id = ?""",
-                (rep_rating, datetime.datetime.now(), public_id)
-            )
-        if cursour.rowcount == 0:
-            raise ValueError(f"User with public_id {public_id} not found in the database")
-        logger.debug(f"update rep rating {public_id=}, {rep_rating=}")
-    
-    def update_user_rep_rating_with_user_id(self, user_id: int, rep_rating: int):
+    def update_user_rep_rating(self, telegram_id: int, rep_rating: int):
         with self.conn:
             self.conn.execute(
-                """UPDATE user SET rep_rating = ?, last_contact = ? WHERE user_id = ?""",
-                (rep_rating, datetime.datetime.now(), user_id)
+                """UPDATE user SET rep_rating = ?, last_contact = ? WHERE telegram_id = ?""",
+                (rep_rating, datetime.datetime.now(), telegram_id)
             )
-        logger.debug(f"update rep rating {user_id=}, {rep_rating=}")
+        logger.debug(f"update rep rating {telegram_id=}, {rep_rating=}")
 
     def update_user_last_contact(self, telegram_id: int):
         with self.conn:

@@ -5,7 +5,7 @@ from databaseAPI import rep_chess_db
 
 
 async def process_changing_public_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    rep_ids = update.message.text.split()
+    rep_ids = update.message.text.split(" ")
     if len(rep_ids) != 2:
         await update.message.reply_text("Прочитай формат ещё раз")
         await admin_change_public_id(update, context)
