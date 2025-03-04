@@ -288,11 +288,11 @@ class RepChessDB:
 
     def update_user_rep_rating_with_rep_id(self, public_id: int, rep_rating: int):
         with self.conn:
-            cursour = self.conn.execute(
+            cursor = self.conn.execute(
                 """UPDATE user SET rep_rating = ?, last_contact = ? WHERE public_id = ?""",
                 (rep_rating, datetime.datetime.now(), public_id)
             )
-        if cursour.rowcount == 0:
+        if cursor.rowcount == 0:
             raise ValueError(f"User with public_id {public_id} not found in the database")
         logger.debug(f"update rep rating {public_id=}, {rep_rating=}")
     

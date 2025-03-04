@@ -8,18 +8,19 @@ from util import check_string
 
 
 async def process_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def send_error_and_resume(update: Update, context: ContextTypes.DEFAULT_TYPE, err_msg: str):
+        message = await context.bot.send_message(update.effective_chat.id, err_msg, parse_mode="markdown")
+        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
+        await change_name_handler(update, context)
+
     name = update.message.text
     # Too long name
     if len(name) > 100:
-        message = await update.message.reply_text("Странное имя. Попробуйте покороче.")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await change_name_handler(update, context)
+        await send_error_and_resume(update, context, "*Странное имя. Попробуйте покороче.*")
         return
 
     if not check_string(name):
-        message = await context.bot.send_message("Недопустимые символы в имени! Разрешены только буквы, цифры, пробел, -, !, ?")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await change_name_handler(update, context)
+        await send_error_and_resume(update, context, "*Недопустимые символы в имени! Разрешены только буквы, цифры, пробел, -, !, ?*")
         return
 
     context.user_data["user_db_data"]["name"] = name

@@ -6,24 +6,28 @@ from main_menu_handler import main_menu_handler
 
 
 async def process_input_lichess_rating(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def send_error_and_resume(update: Update, context: ContextTypes.DEFAULT_TYPE, err_msg: str):
+        message = await update.message.reply_text(err_msg, parse_mode="markdown")
+        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
+        await profile_lichess_rating_handler(update, context)
+
     lichess_rating = update.message.text
     if not lichess_rating.isdigit():
-        message = await update.message.reply_text("*Не похоже на рейтинг...*", parse_mode="markdown")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await profile_lichess_rating_handler(update, context)
+        await send_error_and_resume(update, context, "*Не похоже на рейтинг...*")
         return
 
-    lichess_rating = int(lichess_rating)
+    try:
+        lichess_rating = int(lichess_rating)
+    except ValueError:
+        await send_error_and_resume(update, context, "*Воу, это что такое? Попробуйте ещё раз*")
+        return
+
     if lichess_rating >= 3000:
-        message = await update.message.reply_text("*Хорошая попытка, Карлсен. Попробуй ещё раз.*", parse_mode="markdown")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await profile_lichess_rating_handler(update, context)
+        await send_error_and_resume(update, context, "*Хорошая попытка, Карлсен. Попробуй ещё раз.*")
         return
 
     if lichess_rating <= 100:
-        message = await update.message.reply_text("*Сомневаюсь, что у вас такой рейтинг... Попробуй ещё раз.*", parse_mode="markdown")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await profile_lichess_rating_handler(update, context)
+        await send_error_and_resume(update, context, "*Сомневаюсь, что у вас такой рейтинг... Попробуй ещё раз.*")
         return
 
     context.user_data["user_db_data"]["lichess_rating"] = lichess_rating

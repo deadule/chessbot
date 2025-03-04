@@ -6,26 +6,25 @@ from main_menu_handler import main_menu_handler
 
 
 async def process_input_age(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    age = update.message.text
-    if not age.isdigit():
-        message = await update.message.reply_text("*Не похоже на возраст... Попробуйте ещё раз*", parse_mode="markdown")
+    async def send_error_and_resume(update: Update, context: ContextTypes.DEFAULT_TYPE, err_msg: str):
+        message = await context.bot.send_message(update.effective_chat.id, err_msg, parse_mode="markdown")
         context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
         await profile_age_handler(update, context)
+
+    age = update.message.text
+    if not age.isdigit():
+        await send_error_and_resume(update, context, "*Не похоже на возраст... Попробуйте ещё раз*")
         return
+
     try:
         age = int(age)
     except ValueError:
-        message = await update.message.reply_text("*Что-то не то вы ввели. Попробуйте ещё раз*", parse_mode="markdown")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await profile_age_handler(update, context)
+        await send_error_and_resume(update, context, "*Что-то не то вы ввели. Попробуйте ещё раз*")
         return
 
     if age >= 100 or age < 5:
-        message = await update.message.reply_text("*Ну да, ну да. Так мы вам и поверили*", parse_mode="markdown")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await profile_age_handler(update, context)
+        await send_error_and_resume(update, context, "*Ну да, ну да. Так мы вам и поверили*")
         return
-
 
     context.user_data["user_db_data"]["age"] = age
     context.user_data["text_state"] = None

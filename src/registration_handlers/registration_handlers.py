@@ -60,20 +60,21 @@ async def process_permanent_nickname(update: Update, context: ContextTypes.DEFAU
 
 
 async def reading_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def send_error_and_resume(update: Update, context: ContextTypes.DEFAULT_TYPE, err_msg: str):
+        await context.bot.send_message(update.effective_chat.id, err_msg, parse_mode="markdown")
+        await process_temp_nickname(update, context)
+
     nickname = update.message.text
     if len(nickname) > 100:
-        await update.message.reply_text("Слишком длинный ник. Попробуйте покороче.")
-        await process_temp_nickname(update, context)
+        await send_error_and_resume(update, context, "*Слишком длинный ник. Попробуйте покороче.*")
         return
 
     if not check_string(nickname):
-        await context.bot.send_message(update.effective_chat.id, "Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?")
-        await process_temp_nickname(update, context)
+        await send_error_and_resume(update, context, "*Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?*")
         return
 
     if nickname in context.bot_data[f"tournament_{active_tournament["tournament_id"]}"]:
-        await context.bot.send_message(update.effective_chat.id, "Увы, такой ник уже используется в этом турнире! Попробуйте другой")
-        await process_temp_nickname(update, context)
+        await send_error_and_resume(update, context, "*Увы, такой ник уже используется в этом турнире! Попробуйте другой*")
         return
 
     context.bot_data[f"tournament_{active_tournament["tournament_id"]}"].add(nickname)
@@ -111,9 +112,10 @@ async def ask_about_registration(update: Update, context: ContextTypes.DEFAULT_T
     if not active_tournament["active"]:
         await context.bot.send_message(
             update.effective_chat.id,
-            "Сейчас нет активной регистрации! Регистрация открывается за несколько минут до начала турнира.\n\n"
+            "*Сейчас нет активной регистрации!*\n\nРегистрация открывается за несколько минут до начала турнира.\n"
             "Если вы не успели записаться, подойдите к организатору.",
-            reply_markup=main_menu_reply_keyboard()
+            reply_markup=main_menu_reply_keyboard(),
+            parse_mode="markdown"
         )
         return
 

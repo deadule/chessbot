@@ -5,38 +5,45 @@ from databaseAPI import rep_chess_db
 
 
 async def process_changing_public_id(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def send_error_and_resume(update: Update, context: ContextTypes.DEFAULT_TYPE, err_msg):
+        await context.bot.send_message(update.effective_chat.id, err_msg, parse_mode="markdown")
+        await admin_change_public_id(update, context)
+
     rep_ids = update.message.text.split()
     if len(rep_ids) != 2:
-        await update.message.reply_text("Прочитай формат ещё раз")
-        await admin_change_public_id(update, context)
+        await send_error_and_resume(update, context, "Прочитай формат ещё раз")
         return
 
     old_id, new_id = rep_ids
 
     if not old_id.isdigit() or not new_id.isdigit():
-        await update.message.reply_text("Это определённо не ID")
-        await admin_change_public_id(update, context)
+        await send_error_and_resume(update, context, "Это определённо не ID")
         return
 
-    old_id, new_id = int(old_id), int(new_id)
+    try:
+        old_id, new_id = int(old_id), int(new_id)
+    except ValueError:
+        await send_error_and_resume(update, context, "Воу, это что такое? Попробуйте ещё раз")
+        return
+
     if old_id < 1 or old_id >= 100000:
-        await update.message.reply_text("Старый ID не попадает в диапазон")
-        await admin_change_public_id(update, context)
+        await send_error_and_resume(update, context, "Старый ID не попадает в диапазон")
         return
 
     if new_id < 1 or new_id >= 100000:
-        await update.message.reply_text("Новый ID не попадает в диапазон")
-        await admin_change_public_id(update, context)
+        await send_error_and_resume(update, context, "Новый ID не попадает в диапазон")
         return
 
     is_free = rep_chess_db.update_user_public_id(old_id, new_id)
     if not is_free:
-        await update.message.reply_text("Этот ID уже занят игроком, попробуйте другой")
-        await admin_change_public_id(update, context)
+        await send_error_and_resume(update, context, "Этот ID уже занят игроком, попробуйте другой")
         return
 
     context.user_data["text_state"] = None
-    await update.message.reply_text("Запрос обработан. Проверьте, что все успешно.")
+    await update.message.reply_text(
+        "ID успешно изменён!\n\n *ВАЖНО! Пользователь должен написать команду /start для обновления*",
+        parse_mode="markdown"
+    )
 
 
 async def admin_change_public_id(update: Update, context: ContextTypes.DEFAULT_TYPE):

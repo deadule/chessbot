@@ -7,17 +7,19 @@ from util import check_string
 
 
 async def process_input_surname(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    surname = update.message.text
-    # Too long surname
-    if len(surname) > 100:
-        message = await update.message.reply_text("Странная фамилия. Попробуйте покороче.")
+    async def send_error_and_resume(update: Update, context: ContextTypes.DEFAULT_TYPE, err_msg: str):
+        message = await context.bot.send_message(update.effective_chat.id, err_msg, parse_mode="markdown")
         context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
         await profile_surname_handler(update, context)
 
+    surname = update.message.text
+    # Too long surname
+    if len(surname) > 100:
+        await send_error_and_resume(update, context, "*Странная фамилия. Попробуйте покороче.*")
+        return
+
     if not check_string(surname):
-        message = await context.bot.send_message("Недопустимые символы в фамилии! Разрешены только буквы, цифры, пробел, -, !, ?")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await profile_surname_handler(update, context)
+        await send_error_and_resume(update, context, "*Недопустимые символы в фамилии! Разрешены только буквы, цифры, пробел, -, !, ?*")
         return
 
     context.user_data["user_db_data"]["surname"] = surname

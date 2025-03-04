@@ -7,18 +7,19 @@ from util import check_string
 
 
 async def process_input_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def send_error_and_resume(update: Update, context: ContextTypes.DEFAULT_TYPE, err_msg: str):
+        message = await context.bot.send_message(update.effective_chat.id, err_msg, parse_mode="markdown")
+        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
+        await profile_nickname_handler(update, context)
+
     nickname = update.message.text
     # Too long nickname
     if len(nickname) > 100:
-        message = await update.message.reply_text("Слишком длинный ник. Попробуйте покороче.")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await profile_nickname_handler(update, context)
+        await send_error_and_resume(update, context, "*Слишком длинный ник. Попробуйте покороче.*")
         return
 
     if not check_string(nickname):
-        message = await context.bot.send_message(update.effective_chat.id, "Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?")
-        context.user_data["messages_to_delete"].extend([update.message.message_id, message.message_id])
-        await profile_nickname_handler(update, context)
+        await send_error_and_resume(update, context, "*Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?*")
         return
 
     context.user_data["user_db_data"]["nickname"] = nickname

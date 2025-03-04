@@ -10,13 +10,13 @@ async def process_changing_rep_rating(update: Update, context: ContextTypes.DEFA
     if len(input_parts) != 2:
         await send_error_and_prompt(update, context, error_text="Формат ввода неверный, попробуйте еще раз")
         return
-    
+
     public_id, rep_rating = input_parts
 
     if not rep_rating.isdigit() or not public_id.isdigit():
         await send_error_and_prompt(update, context, error_text="Не похоже что ID и рейтинг введены верно.")
         return
-    
+
     try:
         public_id = int(public_id)
         rep_rating = int(rep_rating)
@@ -32,14 +32,17 @@ async def process_changing_rep_rating(update: Update, context: ContextTypes.DEFA
     if rep_rating < 100:
         await send_error_and_prompt(update, context, error_text="Рейтинг игрока ниже 100, все настолько плохо...?")
         return
-    
+
     context.user_data["text_state"] = None
 
     # send database query and check for ID's existence 
     try:
         rep_chess_db.update_user_rep_rating_with_rep_id(public_id, rep_rating)
-        await update.message.reply_text("Рейтинг игрока обновлен.")
-    except ValueError as err:
+        await update.message.reply_text(
+            "Рейтинг успешно изменён!\n\n *ВАЖНО! Пользователь должен написать команду /start для обновления*",
+            parse_mode="markdown"
+        )
+    except ValueError:
         await send_error_and_prompt(update, context, error_text="Игрока с таким rep ID не существует, не удалось обновить рейтинг.")
 
 
@@ -49,7 +52,7 @@ async def admin_change_rep_rating(update: Update, context: ContextTypes.DEFAULT_
         await query.answer()
 
     context.user_data["text_state"] = process_changing_rep_rating
-    message = await context.bot.send_message(
+    await context.bot.send_message(
         update.effective_chat.id,
         "Введите сначала rep ID и после новый rep рейтинг игрока через пробел:",
     )
@@ -62,5 +65,5 @@ admin_change_rep_rating_handlers = [
 
 # for DRY purposes
 async def send_error_and_prompt(update, context, error_text):
-    msg = await update.message.reply_text(error_text)
+    await update.message.reply_text(error_text)
     await admin_change_rep_rating(update, context)
