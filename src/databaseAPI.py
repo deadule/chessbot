@@ -239,7 +239,7 @@ class RepChessDB:
                 """SELECT public_id FROM user WHERE public_id = ?""",
                 (old_public_id,)
             )
-        if cursor.fetchone():
+        if not cursor.fetchone():
             return
 
         with self.conn:
