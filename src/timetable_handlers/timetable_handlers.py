@@ -124,6 +124,12 @@ async def process_edited_post(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not text:
         return
 
+    if text.startswith("📅 Расписание на неделю:\n\n"):
+        # update weakly timetable
+        photo_id = max(update.edited_channel_post.photo, key = lambda x: x.height).file_id
+        rep_chess_db.update_weakly_info(update.edited_channel_post.chat.username, update.edited_channel_post.message_id, photo_id)
+        return
+
     tournament = parse_tournament_post(text)
     if not tournament:
         return
@@ -159,7 +165,7 @@ async def tournament_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
     short_timetable_buttons = context.user_data["timetable_buttons"][:-1] + [[InlineKeyboardButton("<< Назад", callback_data="go_main_timetable")]]
     await context.bot.send_message(
         update.effective_chat.id,
-        "🌟  *_Анонсы_*",
+        "🌟  *_Анонсы мероприятий_*",
         reply_markup=InlineKeyboardMarkup(short_timetable_buttons),
         parse_mode="MarkdownV2"
     )

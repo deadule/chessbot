@@ -11,9 +11,21 @@ from start import main_menu_reply_keyboard
 
 
 async def delete_forwarded_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message.api_kwargs:
+        tg_channel = update.message.api_kwargs["forward_from_chat"]["username"]
+        message_id = update.message.api_kwargs["forward_from_message_id"]
+    else:
+        print("LDSKFFFFFFFFF\n")
+        tg_channel = update.message.forward_from_chat.username,
+        if isinstance(tg_channel, tuple): # idk what does telegram doing, it is something wrong
+            tg_channel = tg_channel[0]
+        message_id = update.message.forward_from_message_id
+
+    print(tg_channel, message_id, "\n\n\n\n\n\n\n\n\n\n")
+
     rep_chess_db.remove_tournament(
-        update.message.forward_from_chat.username,
-        update.message.forward_from_message_id
+        tg_channel,
+        message_id
     )
     context.user_data["forwarded_state"] = None
     await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard())
@@ -23,7 +35,7 @@ async def delete_link_timetable(update: Update, context: ContextTypes.DEFAULT_TY
     try:
         parsed_url = urlparse(update.message.text)
     except ValueError:
-        update.message.reply_text("Ты описание выше вообще читал? Что ты мне впариваешь?")
+        update.message.reply_text("Это очень странная ссылка, прочитай описание выше ещё раз?")
         return
 
     try:

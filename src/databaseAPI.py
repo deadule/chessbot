@@ -549,7 +549,7 @@ class RepChessDB:
     def update_weakly_info(self, channel, message_id, photo_id):
         with self.conn:
             self.conn.execute(
-                """UPDATE city SET timetable_message_id = ?, timetable_photo = ? WHERE tg_channel=?""",
+                """UPDATE city SET timetable_message_id = ?, timetable_photo = ? WHERE tg_channel = ?""",
                 (message_id, photo_id, channel)
             )
 
