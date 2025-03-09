@@ -30,7 +30,7 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
     for row in results:
         nickname = row["Имя"].strip()
         user_in_tournament = rep_chess_db.get_user_on_tournament_on_nickname(tournament_id, nickname)
-        if not user_in_tournament or row["#"] <= 10:
+        if not user_in_tournament or int(row["#"]) <= 10:
             continue
         user_id = user_in_tournament["user_id"]
         games_played = 0
