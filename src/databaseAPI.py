@@ -595,6 +595,10 @@ class RepChessDB:
         return cursor.fetchall()
 
     def get_user_on_tournament_on_nickname(self, tournament_id: int, nickname: str) -> dict:
+        """
+        Return None if there aren't user on tournament with nockname.
+        Otherwise return user_on_tournament element.
+        """
         with self.conn:
             cursor = self.conn.execute(
                 """SELECT user_id FROM user_on_tournament WHERE tournament_id = ? AND nickname = ?""",

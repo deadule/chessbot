@@ -30,7 +30,8 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
     for row in results:
         nickname = row["Имя"].strip()
         user_in_tournament = rep_chess_db.get_user_on_tournament_on_nickname(tournament_id, nickname)
-        if not user_in_tournament or int(row["#"]) <= 10:
+        # Unknown user in tournament, just ignore him.
+        if not user_in_tournament:
             continue
         user_id = user_in_tournament["user_id"]
         games_played = 0
@@ -125,7 +126,7 @@ async def upload_tournament_results(update: Update, context: ContextTypes.DEFAUL
 
     await context.bot.send_message(
         update.effective_chat.id,
-        "Пришлите .csv файл с результатами турнира",
+        "Пришлите .csv файл с результатами турнира. ВАЖНО: пока что таблица в файле должна быть на русском языке",
     )
 
 
