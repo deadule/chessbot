@@ -20,6 +20,35 @@ def construct_nickname_keyboard(nickname) -> InlineKeyboardMarkup:
     ])
 
 
+async def update_and_save_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE, nickname: str):
+    tournament_nicknames_key = f"tournament_{active_tournament["tournament_id"]}_nicknames"
+    tournament_nicknames_users_key = tournament_nicknames_key + "_users"
+    user_id = context.user_data["user_db_data"]["user_id"]
+    if user_id in context.bot_data[tournament_nicknames_users_key]:
+        context.bot_data[tournament_nicknames_key].remove(context.bot_data[tournament_nicknames_users_key][user_id])
+    context.bot_data[tournament_nicknames_users_key][user_id] = nickname
+    context.bot_data[tournament_nicknames_key].add(nickname)
+
+    await context.bot.send_message(
+        update.effective_chat.id,
+        "Вы успешно зарегистрированы. Удачи на турнире!",
+        reply_markup=main_menu_reply_keyboard()
+    )
+
+    games_played = context.user_data["user_db_data"]["games_played"]
+    if games_played < 20:
+        k_factor = 90 - games_played * 3
+    else:
+        k_factor = 30
+    rep_chess_db.add_user_on_tournament(
+        user_id,
+        active_tournament["tournament_id"],
+        nickname,
+        context.user_data["user_db_data"]["rep_rating"],
+        k_factor
+    )
+
+
 async def process_permanent_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -34,29 +63,11 @@ async def process_permanent_nickname(update: Update, context: ContextTypes.DEFAU
         await ask_about_registration(update, context)
         return
 
-    if nickname in context.bot_data[f"tournament_{active_tournament["tournament_id"]}"]:
+    if nickname in context.bot_data[f"tournament_{active_tournament["tournament_id"]}_nicknames"]:
         await context.bot.send_message(update.effective_chat.id, "Увы, такой ник уже используется в этом турнире! Попробуйте другой")
         await ask_about_registration(update, context)
         return
-
-    await context.bot.send_message(
-        update.effective_chat.id,
-        "Вы успешно зарегистрированы. Удачи на турнире!",
-        reply_markup=main_menu_reply_keyboard()
-    )
-
-    games_played = context.user_data["user_db_data"]["games_played"]
-    if games_played < 20:
-        k_factor = 90 - games_played * 3
-    else:
-        k_factor = 30
-    rep_chess_db.add_user_on_tournament(
-        context.user_data["user_db_data"]["user_id"],
-        active_tournament["tournament_id"],
-        nickname,
-        context.user_data["user_db_data"]["rep_rating"],
-        k_factor
-    )
+    await update_and_save_nickname(update, context, nickname)
 
 
 async def reading_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -73,30 +84,12 @@ async def reading_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TY
         await send_error_and_resume(update, context, "*Недопустимые символы в нике! Разрешены только буквы, цифры, пробел, -, !, ?*")
         return
 
-    if nickname in context.bot_data[f"tournament_{active_tournament["tournament_id"]}"]:
+    context.user_data["text_state"] = None
+
+    if nickname in context.bot_data[f"tournament_{active_tournament["tournament_id"]}_nicknames"]:
         await send_error_and_resume(update, context, "*Увы, такой ник уже используется в этом турнире! Попробуйте другой*")
         return
-
-    context.bot_data[f"tournament_{active_tournament["tournament_id"]}"].add(nickname)
-    context.user_data["text_state"] = None
-    await context.bot.send_message(
-        update.effective_chat.id,
-        "Вы успешно зарегистрированы. Удачи на турнире!",
-        reply_markup=main_menu_reply_keyboard()
-    )
-
-    games_played = context.user_data["user_db_data"]["games_played"]
-    if games_played < 20:
-        k_factor = 90 - games_played * 3
-    else:
-        k_factor = 30
-    rep_chess_db.add_user_on_tournament(
-        context.user_data["user_db_data"]["user_id"],
-        active_tournament["tournament_id"],
-        nickname,
-        context.user_data["user_db_data"]["rep_rating"],
-        k_factor
-    )
+    await update_and_save_nickname(update, context, nickname)
 
 
 async def process_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -129,11 +122,11 @@ async def ask_about_registration(update: Update, context: ContextTypes.DEFAULT_T
     nickname = context.user_data["user_db_data"]["nickname"]
     await context.bot.send_message(
         update.effective_chat.id,
-        f"Вы хотите записаться на турнир\n{active_tournament["date_time"]} "
+        f"Вы хотите записаться на турнир\n__{active_tournament["date_time"].strftime("%d\\.%m %H:%M")}__ "
         f" *{active_tournament["summary"]}*\n\nВы уверены в этом?\n\n"
         "Тогда выберите свой постоянный ник или введите одноразовый:",
         reply_markup=construct_nickname_keyboard(nickname),
-        parse_mode="markdown"
+        parse_mode="MarkdownV2"
     )
 
 

@@ -61,9 +61,10 @@ async def open_tournament_registration(update: Update, context: ContextTypes.DEF
     start.active_tournament["summary"] = tournament["summary"]
     start.active_tournament["date_time"] = tournament["date_time"]
     start.active_tournament["active"] = True
-    tournament_key = f"tournament_{tournament["tournament_id"]}"
-    if tournament_key not in context.bot_data:
-        context.bot_data[f"tournament_{tournament["tournament_id"]}"] = set()
+    tournament_nicknames_key = f"tournament_{tournament["tournament_id"]}_nicknames"
+    if tournament_nicknames_key not in context.bot_data:
+        context.bot_data[tournament_nicknames_key] = set()
+        context.bot_data[tournament_nicknames_key + "_users"] = dict()
     await context.bot.send_message(
         update.effective_chat.id,
         f"Регистрация на турнир *{start.active_tournament["summary"]}* открыта! Проверьте, что кнопка *\"⚔ Записаться на турнир\"* работает",
