@@ -30,6 +30,8 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
     for row in results:
         nickname = row["Имя"].strip()
         user_id = rep_chess_db.get_user_on_tournament_on_nickname(tournament_id, nickname)["user_id"]
+        if not user_id:
+            continue
         games_played = 0
 
         for tour_number in range(1, number_of_tours + 1):
@@ -41,9 +43,13 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
             float_res = result_mapping[str_res[0]]
             if "W" in str_res:
                 black_user_id = rep_chess_db.get_user_on_tournament_on_nickname(tournament_id, results[int(str_res.split("W")[1]) - 1]["Имя"].strip())["user_id"]
+                if not black_user_id:
+                    continue
                 rep_chess_db.add_game(tournament_id, user_id, black_user_id, tour_number, float_res)
             if str_res.startswith("+BYE"):
                 black_user_id = rep_chess_db.get_user_on_tournament_on_nickname(tournament_id, results[int(str_res.split("E")[1]) - 1]["Имя"].strip())["user_id"]
+                if not black_user_id:
+                    continue
                 rep_chess_db.add_game(tournament_id, user_id, black_user_id, tour_number, float_res)
 
         new_rating = int(row["Новый рейтинг"].strip())

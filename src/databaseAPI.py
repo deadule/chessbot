@@ -600,7 +600,10 @@ class RepChessDB:
                 """SELECT user_id FROM user_on_tournament WHERE tournament_id = ? AND nickname = ?""",
                 (tournament_id, nickname)
             )
-        return dict(cursor.fetchone())
+        user_on_tournament = cursor.fetchone()
+        if not user_on_tournament:
+            return None
+        return dict(user_on_tournament)
 
     def update_user_on_tournament(self, tournament_id: int, nickname: str, rating_after: int, place: int, score: int):
         with self.conn:
