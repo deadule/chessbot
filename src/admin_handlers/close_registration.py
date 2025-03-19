@@ -1,9 +1,9 @@
 from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
+import start
 from databaseAPI import rep_chess_db
 from show_registered import admin_show_registered
-from start import active_tournament
 from admin_main_menu import admin_inline_keyboard
 
 
@@ -17,14 +17,14 @@ async def close_registration_confirmed(update: Update, context: ContextTypes.DEF
     query = update.callback_query
     await query.answer()
 
-    active_tournament["active"] = False
+    start.active_tournament["active"] = False
 
     await context.bot.send_message(
         update.effective_chat.id,
         "Регистрация на турнир закрыта.\nСкопируйте этот список и вставьте в swisssystem.org:"
     )
     await admin_show_registered(update, context)
-    rep_chess_db.close_registration(active_tournament["tournament_id"])
+    rep_chess_db.close_registration(start.active_tournament["tournament_id"])
 
 
 async def admin_close_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -32,7 +32,7 @@ async def admin_close_registration(update: Update, context: ContextTypes.DEFAULT
     if query:
         await query.answer()
 
-    if not active_tournament["active"]:
+    if not start.active_tournament["active"]:
         await context.bot.send_message(
             update.effective_chat.id,
             "Сейчас нет открытой регистрации на турнир!",
@@ -42,7 +42,7 @@ async def admin_close_registration(update: Update, context: ContextTypes.DEFAULT
 
     await context.bot.send_message(
         update.effective_chat.id,
-        f"Вы уверены, что хотите закрыть регистрацию на турнир *{active_tournament["summary"]}*?",
+        f"Вы уверены, что хотите закрыть регистрацию на турнир *{start.active_tournament["summary"]}*?",
         reply_markup=close_registration_keyboard,
         parse_mode="markdown"
     )

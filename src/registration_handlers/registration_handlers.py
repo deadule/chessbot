@@ -32,7 +32,7 @@ async def update_and_save_nickname(update: Update, context: ContextTypes.DEFAULT
     await context.bot.send_message(
         update.effective_chat.id,
         "Вы успешно зарегистрированы. Удачи на турнире!",
-        reply_markup=main_menu_reply_keyboard()
+        reply_markup=main_menu_reply_keyboard(context)
     )
 
     games_played = context.user_data["user_db_data"]["games_played"]
@@ -75,6 +75,10 @@ async def reading_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TY
         await context.bot.send_message(update.effective_chat.id, err_msg, parse_mode="markdown")
         await process_temp_nickname(update, context)
 
+    if not update.message:
+        # It is strange update, maybe editing some message for God just know what reasons. Ignore it.
+        return
+
     nickname = update.message.text
     if len(nickname) > 100:
         await send_error_and_resume(update, context, "*Слишком длинный ник. Попробуйте покороче.*")
@@ -107,7 +111,7 @@ async def ask_about_registration(update: Update, context: ContextTypes.DEFAULT_T
             update.effective_chat.id,
             "*Сейчас нет активной регистрации!*\n\nРегистрация открывается за несколько минут до начала турнира.\n"
             "Если вы не успели записаться, подойдите к организатору.",
-            reply_markup=main_menu_reply_keyboard(),
+            reply_markup=main_menu_reply_keyboard(context),
             parse_mode="markdown"
         )
         return

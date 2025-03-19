@@ -1,18 +1,18 @@
 from telegram import Update
 from telegram.ext import MessageHandler, ContextTypes, filters
 
-import start
+from start import main_menu_reply_keyboard
 
 
 async def camp_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not start.camp_data["active"]:
-        await update.message.reply_text("В данный момент нет активной записи в лагерь.", reply_markup=start.main_menu_reply_keyboard())
+    if not context.bot_data["camp_data"]["active"]:
+        await update.message.reply_text("Сейчас нет активной записи в лагерь.", reply_markup=main_menu_reply_keyboard(context))
         return
 
     await context.bot.forward_message(
         update.effective_chat.id,
-        "@" + start.camp_data["channel"],
-        start.camp_data["message_id"]
+        "@" + context.bot_data["camp_data"]["channel"],
+        context.bot_data["camp_data"]["message_id"]
     )
 
 

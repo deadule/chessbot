@@ -7,12 +7,6 @@ from databaseAPI import rep_chess_db
 # Save it in global except database because it is faster.
 # To show camp button set "active" field to True.
 # TODO: Возможно, перенести эти данные в context.bot_data - данные, общие для бота
-camp_data = {
-    "active": False,
-    "channel": None,
-    "message_id": None
-}
-
 active_tournament = {
     "active": False,
     "tournament_id": None,
@@ -39,8 +33,8 @@ reg_camp_main_menu_reply_keyboard = ReplyKeyboardMarkup([
 )
 
 
-def main_menu_reply_keyboard():
-    if camp_data["active"]:
+def main_menu_reply_keyboard(context: ContextTypes.DEFAULT_TYPE):
+    if context.bot_data["camp_data"]["active"]:
         return reg_camp_main_menu_reply_keyboard
     return reg_main_menu_reply_keyboard
 
@@ -52,7 +46,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if "messages_to_delete" in context.user_data:
         context.user_data["messages_to_delete"] = []
     # Greeting message and ReplyKeyboard options
-    await update.message.reply_text(f"Привет, {name}!", reply_markup=main_menu_reply_keyboard())
+    await update.message.reply_text(f"Привет, {name}!", reply_markup=main_menu_reply_keyboard(context))
 
 
 async def go_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -63,7 +57,7 @@ async def go_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         update.effective_chat.id,
         "_Вы в главном меню_",
-        reply_markup=main_menu_reply_keyboard(),
+        reply_markup=main_menu_reply_keyboard(context),
         parse_mode="markdown"
     )
 

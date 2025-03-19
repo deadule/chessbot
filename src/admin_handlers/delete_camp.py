@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
-import start
+from start import main_menu_reply_keyboard
 
 
 async def add_camp_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -12,9 +12,9 @@ async def add_camp_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(update.effective_chat.id, "Ниче не понял, попробуйте ещё раз.")
         return
 
-    start.camp_data["active"] = False
+    context.bot_data["camp_data"]["active"] = False
     context.user_data["forwarded_state"] = None
-    await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=start.main_menu_reply_keyboard())
+    await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard(context))
 
 
 async def admin_update_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
