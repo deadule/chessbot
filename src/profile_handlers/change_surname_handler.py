@@ -13,6 +13,9 @@ async def process_input_surname(update: Update, context: ContextTypes.DEFAULT_TY
         await profile_surname_handler(update, context)
 
     surname = update.message.text
+    if not surname:
+        await send_error_and_resume(update, context, "*Вы прислали что-то странное. Попробуйте ещё раз.*")
+        return
     # Too long surname
     if len(surname) > 100:
         await send_error_and_resume(update, context, "*Странная фамилия. Попробуйте покороче.*")

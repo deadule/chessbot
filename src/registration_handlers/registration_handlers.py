@@ -106,6 +106,11 @@ async def process_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TY
 
 
 async def ask_about_registration(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.message:
+        telegram_id = update.message.from_user.id
+    else:
+        telegram_id = update.callback_query.from_user.id
+    rep_chess_db.update_user_last_contact(telegram_id)
     if not active_tournament["active"]:
         await context.bot.send_message(
             update.effective_chat.id,

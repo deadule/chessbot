@@ -41,7 +41,7 @@ def parse_tournament_post(post: str) -> dict | None:
     string = string.split("\n")
     string.remove("")
 
-    day, month = map(int, string[0].split("."))
+    day, month = map(int, string[0].split(".")[0:2])
 
     date_time = datetime.datetime(
         datetime.date.today().year,

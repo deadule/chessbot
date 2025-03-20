@@ -1,8 +1,13 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+import logging
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update, error
 from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 from databaseAPI import rep_chess_db
 from util import escape_special_symbols
+
+
+logger = logging.getLogger(__name__)
 
 
 profile_keyboard = InlineKeyboardMarkup([
@@ -89,7 +94,10 @@ async def main_menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Delete useless messages about correcting some data
     if "messages_to_delete" in context.user_data and context.user_data["messages_to_delete"]:
-        await context.bot.delete_messages(update.effective_chat.id, context.user_data["messages_to_delete"])
+        try:
+            await context.bot.delete_messages(update.effective_chat.id, context.user_data["messages_to_delete"])
+        except error.BadRequest as e:
+            logger.error(e)
     context.user_data["messages_to_delete"] = []
 
     profile_str = construct_profile_message(user_db_data)

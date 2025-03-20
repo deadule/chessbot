@@ -13,6 +13,9 @@ async def process_input_nickname(update: Update, context: ContextTypes.DEFAULT_T
         await profile_nickname_handler(update, context)
 
     nickname = update.message.text
+    if not nickname:
+        await send_error_and_resume(update, context, "*Вы прислали что-то странное. Попробуйте ещё раз.*")
+        return
     # Too long nickname
     if len(nickname) > 100:
         await send_error_and_resume(update, context, "*Слишком длинный ник. Попробуйте покороче.*")

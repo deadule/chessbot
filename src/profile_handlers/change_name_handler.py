@@ -14,6 +14,9 @@ async def process_input_name(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await change_name_handler(update, context)
 
     name = update.message.text
+    if not name:
+        await send_error_and_resume(update, context, "*Вы прислали что-то странное. Попробуйте ещё раз.*")
+        return
     # Too long name
     if len(name) > 100:
         await send_error_and_resume(update, context, "*Странное имя. Попробуйте покороче.*")
