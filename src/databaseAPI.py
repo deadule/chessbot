@@ -498,7 +498,7 @@ class RepChessDB:
 
         with self.conn:
             cursor = self.conn.execute(request, values)
-        return cursor.fetchall()
+        return list(map(dict, cursor.fetchall()))
 
     def remove_tournament(self, tg_channel: str, message_id: int):
         with self.conn:

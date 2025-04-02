@@ -7,7 +7,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
 from databaseAPI import rep_chess_db
-from timetable_handlers import DIGITS_EMOJI
+from util import construct_timetable_buttons
 
 
 logger = logging.getLogger(__name__)
@@ -68,23 +68,6 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
         rep_chess_db.update_user_rep_rating_with_user_id(user_id, new_rating)
 
 
-def construct_short_timetable(tournaments: list[tuple]) -> tuple[str, InlineKeyboardMarkup]:
-    result_str = "🌟  *_Турниры без загруженных результатов:_*\n"
-    result_markup = []
-
-    for i, tournament in enumerate(tournaments, 1):
-        if i % 5 == 1:
-            result_markup.append([])
-        text_number = DIGITS_EMOJI[i//10] if i >= 10 else ""
-        text_number += DIGITS_EMOJI[i%10]
-        result_str += f"\n{text_number}  __{tournament[5].strftime("%d\\.%m %H:%M")}__\n   *{tournament[4]}*\n"
-
-        result_markup[-1].append(InlineKeyboardButton(text_number, callback_data=f"upload_results:{tournament[0]}"))
-    result_markup.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])
-
-    return result_str, InlineKeyboardMarkup(result_markup)
-
-
 async def process_tournament_file(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message.document.file_name.endswith(".csv"):
         await update.message.reply_text("Это что такое? Пришлите .csv файл, пожалуйста")
@@ -108,6 +91,7 @@ async def process_tournament_file(update: Update, context: ContextTypes.DEFAULT_
                 return"""
 
     rep_chess_db.results_uploaded(context.user_data["uploaded_tournament_id"])
+    rep_chess_db.close_registration(context.user_data["uploaded_tournament_id"])
     await update.message.reply_text("Результаты обработаны! Игроки могут посмотреть обновленный рейтинг.")
 
     context.user_data["file_state"] = None
@@ -119,7 +103,7 @@ async def upload_tournament_results(update: Update, context: ContextTypes.DEFAUL
     if query:
         await query.answer()
 
-    _, tournament_id = query.data.split(":")
+    _, tournament_id, _, _ = query.data.split(":")
 
     context.user_data["file_state"] = process_tournament_file
     context.user_data["uploaded_tournament_id"] = tournament_id
@@ -137,14 +121,22 @@ async def admin_upload_results(update: Update, context: ContextTypes.DEFAULT_TYP
 
     today = datetime.date.today()
     today_start = datetime.datetime(today.year, today.month, today.day, 0, 0, 0)
-    yesterday = today_start - datetime.timedelta(days=1)
+    week_ago = today_start - datetime.timedelta(days=7)
     today_end = datetime.datetime(today.year, today.month, today.day, 23, 59, 59)
-    tournaments = rep_chess_db.get_tournaments(yesterday, today_end, results_uploaded=False)
-    message, keyboard = construct_short_timetable(tournaments)
-    await context.bot.send_message(update.effective_chat.id, message, reply_markup=keyboard, parse_mode="MarkdownV2")
+    tournaments = rep_chess_db.get_tournaments(week_ago, today_end, results_uploaded=False)
+    message, buttons = construct_timetable_buttons(tournaments, "upload_results")
+    message = "🌟  *_Турниры без загруженных результатов:_*\n" + message
+    buttons.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])
+
+    await context.bot.send_message(
+        update.effective_chat.id,
+        message,
+        reply_markup=InlineKeyboardMarkup(buttons),
+        parse_mode="MarkdownV2"
+    )
 
 
 admin_upload_results_handlers = [
     CallbackQueryHandler(admin_upload_results, pattern="^admin_upload_results$"),
-    CallbackQueryHandler(upload_tournament_results, pattern="^upload_results:")
+    CallbackQueryHandler(upload_tournament_results, pattern="^upload_results:*")
 ]

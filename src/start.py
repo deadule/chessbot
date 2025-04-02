@@ -4,17 +4,6 @@ from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler
 from databaseAPI import rep_chess_db
 
 
-# Save it in global except database because it is faster.
-# To show camp button set "active" field to True.
-# TODO: Возможно, перенести эти данные в context.bot_data - данные, общие для бота
-active_tournament = {
-    "active": False,
-    "tournament_id": None,
-    "summary": None,
-    "date_time": None
-}
-
-
 reg_main_menu_reply_keyboard = ReplyKeyboardMarkup([
         [KeyboardButton("📅  Расписание")],
         [KeyboardButton("👤 Профиль")],

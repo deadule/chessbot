@@ -7,21 +7,7 @@ from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHan
 
 from databaseAPI import rep_chess_db
 from start import main_menu_reply_keyboard
-from util import escape_special_symbols
-
-
-DIGITS_EMOJI = {
-    0: "0⃣",
-    1: "1⃣",
-    2: "2⃣",
-    3: "3⃣",
-    4: "4⃣",
-    5: "5⃣",
-    6: "6⃣",
-    7: "7⃣",
-    8: "8⃣",
-    9: "9⃣",
-}
+from util import escape_special_symbols, construct_timetable_buttons
 
 
 def parse_tournament_post(post: str) -> dict | None:
@@ -139,27 +125,10 @@ async def process_edited_post(update: Update, context: ContextTypes.DEFAULT_TYPE
     rep_chess_db.update_tournament(**tournament)
 
 
-def construct_timetable(tournaments: List[datetime.datetime]) -> tuple[str, list[InlineKeyboardButton]]:
-    result_str = "🌟  *_Анонсы_*\n"
-    result_markup = []
-
-    for i, tournament in enumerate(tournaments, 1):
-        if i % 5 == 1:
-            result_markup.append([])
-        text_number = DIGITS_EMOJI[i//10] if i >= 10 else ""
-        text_number += DIGITS_EMOJI[i%10]
-        result_str += f"\n{text_number}  __{tournament[5].strftime("%d\\.%m %H:%M")}__\n   *{tournament[4]}*\n"
-
-        result_markup[-1].append(InlineKeyboardButton(text_number, callback_data=f"timetable_tournament:{tournament[1]}:{tournament[2]}"))
-    result_markup.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])
-
-    return result_str, result_markup
-
-
 async def tournament_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    _, channel, message_id = query.data.split(":")
+    _, _, channel, message_id = query.data.split(":")
 
     await context.bot.forward_message(update.effective_chat.id, "@" + channel, int(message_id))
     short_timetable_buttons = context.user_data["timetable_buttons"][:-1] + [[InlineKeyboardButton("<< Назад", callback_data="go_main_timetable")]]
@@ -186,7 +155,8 @@ async def main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     today = datetime.date.today()
     tournaments = rep_chess_db.get_tournaments(datetime.datetime(today.year, today.month, today.day, 0, 0, 0))
-    message, inline_markup_buttons = construct_timetable(tournaments)
+    message, inline_markup_buttons = construct_timetable_buttons(tournaments, "timetable_tournament")
+    message = "🌟  *_Анонсы_*\n" + message
     context.user_data["timetable_buttons"] = inline_markup_buttons
     # TODO: Наверное, вещи по типу channel.username можно сохранять в context.
     photo_file_id = rep_chess_db.get_photo_id()
@@ -195,7 +165,8 @@ async def main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYP
         photo_file_id,
         caption=message,
         reply_markup=InlineKeyboardMarkup(inline_markup_buttons),
-        parse_mode="MarkdownV2")
+        parse_mode="MarkdownV2"
+    )
 
 
 timetable_main_message_handler = MessageHandler(filters.Regex("^📅  Расписание$"), main_message_handler)
