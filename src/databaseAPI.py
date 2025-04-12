@@ -586,7 +586,7 @@ class RepChessDB:
                 (None, tournament_id, user_id, nickname, rating, None, None, None, k_factor)
             )
 
-    def get_registered_users(self, tournament_id: int) -> list:
+    def get_registered_users(self, tournament_id: int) -> list[tuple]:
         with self.conn:
             cursor = self.conn.execute(
                 """SELECT * FROM user_on_tournament WHERE tournament_id = ?""",
@@ -596,12 +596,12 @@ class RepChessDB:
 
     def get_user_on_tournament_on_nickname(self, tournament_id: int, nickname: str) -> dict:
         """
-        Return None if there aren't user on tournament with nockname.
+        Return None if there aren't user on tournament with nickname.
         Otherwise return user_on_tournament element.
         """
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT user_id FROM user_on_tournament WHERE tournament_id = ? AND nickname = ?""",
+                """SELECT * FROM user_on_tournament WHERE tournament_id = ? AND nickname = ?""",
                 (tournament_id, nickname)
             )
         user_on_tournament = cursor.fetchone()
@@ -615,6 +615,27 @@ class RepChessDB:
                 """UPDATE user_on_tournament SET rating_after = ?, place = ?, score = ?
                 WHERE tournament_id == ? AND nickname == ?""",
                 (rating_after, place, score, tournament_id, nickname)
+            )
+
+    def get_tournaments_with_registration(
+        self,
+        from_date: datetime.datetime,
+        results_uploaded: bool
+    ):
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT DISTINCT tournament.* FROM user_on_tournament JOIN tournament ON user_on_tournament.tournament_id = tournament.tournament_id
+                WHERE tournament.date_time >= ? AND tournament.results_uploaded = ?""",
+                (from_date, results_uploaded)
+            )
+
+        return list(map(dict, cursor.fetchall()))
+
+    def delete_user_on_tournament(self, tournament_id: int, nickname: str):
+        with self.conn:
+            self.conn.execute(
+                """DELETE FROM user_on_tournament WHERE tournament_id = ? AND nickname = ?""",
+                (tournament_id, nickname)
             )
 
     # GAME ======================================================

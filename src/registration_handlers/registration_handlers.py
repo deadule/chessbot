@@ -76,7 +76,7 @@ async def reading_temp_nickname(update: Update, context: ContextTypes.DEFAULT_TY
         await process_temp_nickname(update, context)
 
     if not update.message:
-        # It is strange update, maybe editing some message for God just know what reasons. Ignore it.
+        # It is a strange update, maybe editing some message for God just know what reasons. Ignore it.
         return
 
     nickname = update.message.text
@@ -132,8 +132,9 @@ async def ask_about_registration(update: Update, context: ContextTypes.DEFAULT_T
         telegram_id = update.message.from_user.id
     else:
         telegram_id = update.callback_query.from_user.id
+    context.user_data["user_db_data"] = rep_chess_db.get_user_on_telegram_id(telegram_id)
     rep_chess_db.update_user_last_contact(telegram_id)
-    if "tournaments" not in context.bot_data:
+    if "tournaments" not in context.bot_data or len(context.bot_data["tournaments"]) < 1:
         await context.bot.send_message(
             update.effective_chat.id,
             "*Сейчас нет открытой регистрации!*\n\nРегистрация открывается за несколько минут до начала турнира.\n"

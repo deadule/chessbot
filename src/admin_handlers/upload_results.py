@@ -38,7 +38,6 @@ def process_game_results(tournament_id: int, results: tuple[dict]):
 
         for tour_number in range(1, number_of_tours + 1):
             str_res = row[f"Тур #{tour_number}"].strip()
-            print(row, tour_number, str_res)
             if not str_res:
                 continue
             games_played += 1
@@ -77,6 +76,7 @@ async def process_tournament_file(update: Update, context: ContextTypes.DEFAULT_
         await update.message.reply_text("Эээ... Что-то не так, как вы сюда попали? Попробуйте ещё раз")
         return
 
+    tournament_id = context.user_data["uploaded_tournament_id"]
     file = await update.message.document.get_file()
     with io.BytesIO() as iofile:
         await file.download_to_memory(iofile)
@@ -84,16 +84,18 @@ async def process_tournament_file(update: Update, context: ContextTypes.DEFAULT_
         with io.TextIOWrapper(iofile, encoding="utf-8-sig") as text_file:
             results = tuple(csv.DictReader(text_file, delimiter=";"))
             #try:
-            process_game_results(context.user_data["uploaded_tournament_id"], results)
+            process_game_results(tournament_id, results)
             """except Exception as e: # here it is ok I think
                 await update.message.reply_text("Оу... Не получилось обработать файл. Вы уверены, что загрузили нужный файл?")
                 logger.info(e)
                 return"""
 
-    rep_chess_db.results_uploaded(context.user_data["uploaded_tournament_id"])
-    rep_chess_db.close_registration(context.user_data["uploaded_tournament_id"])
+    rep_chess_db.results_uploaded(tournament_id)
     await update.message.reply_text("Результаты обработаны! Игроки могут посмотреть обновленный рейтинг.")
 
+    if f"tournament_{tournament_id}" in context.bot_data["tournaments"]:
+        del context.bot_data["tournaments"][f"tournament_{tournament_id}"]
+        rep_chess_db.close_registration(tournament_id)
     context.user_data["file_state"] = None
     context.user_data["uploaded_tournament_id"] = None
 
@@ -121,9 +123,14 @@ async def admin_upload_results(update: Update, context: ContextTypes.DEFAULT_TYP
 
     today = datetime.date.today()
     today_start = datetime.datetime(today.year, today.month, today.day, 0, 0, 0)
-    week_ago = today_start - datetime.timedelta(days=7)
-    today_end = datetime.datetime(today.year, today.month, today.day, 23, 59, 59)
-    tournaments = rep_chess_db.get_tournaments(week_ago, today_end, results_uploaded=False)
+    yesterday = today_start - datetime.timedelta(days=1)
+    tournaments = rep_chess_db.get_tournaments_with_registration(yesterday, results_uploaded=False)
+    if not tournaments:
+        await context.bot.send_message(
+            update.effective_chat.id,
+            "Нет турниров с обсчетом без загруженных результатов! Если что-то не так, обращайтесь к @doled_m"
+        )
+        return
     message, buttons = construct_timetable_buttons(tournaments, "upload_results")
     message = "🌟  *_Турниры без загруженных результатов:_*\n" + message
     buttons.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])

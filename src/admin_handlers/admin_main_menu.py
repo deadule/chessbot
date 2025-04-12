@@ -5,6 +5,7 @@ from databaseAPI import rep_chess_db
 from start import go_main_menu
 
 
+# Only one person have super admin permissions.
 SUPER_ADMIN_ID = 928688258
 
 
@@ -13,6 +14,7 @@ admin_inline_keyboard = InlineKeyboardMarkup([
     [InlineKeyboardButton("Закрыть регистрацию на турнир", callback_data="admin_close_registration")],
     [InlineKeyboardButton("Показать список участников", callback_data="admin_show_registered")],
     [InlineKeyboardButton("Выгрузить результаты турнира", callback_data="admin_upload_results")],
+    [InlineKeyboardButton("Удалить игрока из турнира", callback_data="admin_delete_user_from_tournament")],
     [InlineKeyboardButton("Изменить ID игрока", callback_data="admin_change_public_id")],
     [InlineKeyboardButton("Изменить rep-рейтинг игрока", callback_data="admin_change_rep_rating")],
     [InlineKeyboardButton("Добавить пост в расписание", callback_data="admin_update_timetable")],

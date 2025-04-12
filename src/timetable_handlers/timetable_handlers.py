@@ -157,8 +157,9 @@ async def main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     tournaments = rep_chess_db.get_tournaments(datetime.datetime(today.year, today.month, today.day, 0, 0, 0))
     message, inline_markup_buttons = construct_timetable_buttons(tournaments, "timetable_tournament")
     message = "🌟  *_Анонсы_*\n" + message
+    inline_markup_buttons.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])
     context.user_data["timetable_buttons"] = inline_markup_buttons
-    # TODO: Наверное, вещи по типу channel.username можно сохранять в context.
+
     photo_file_id = rep_chess_db.get_photo_id()
     await context.bot.send_photo(
         update.effective_chat.id,

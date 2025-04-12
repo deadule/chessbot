@@ -11,6 +11,7 @@ from add_camp import admin_add_camp_handlers
 from delete_camp import admin_delete_camp_handlers
 from add_new_admin import admin_add_new_admin_handlers
 from delete_admin import admin_delete_admin_handlers
+from delete_user_from_tournament import admin_delete_user_from_tournament_handlers
 
 
 admin_callback_handlers = admin_main_menu_handlers + \
@@ -25,4 +26,5 @@ admin_delete_timetable_handlers + \
 admin_add_camp_handlers + \
 admin_delete_camp_handlers + \
 admin_add_new_admin_handlers + \
-admin_delete_admin_handlers
+admin_delete_admin_handlers + \
+admin_delete_user_from_tournament_handlers

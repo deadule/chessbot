@@ -4,7 +4,7 @@ from telegram.ext import CallbackQueryHandler, ContextTypes
 from start import main_menu_reply_keyboard
 
 
-async def add_camp_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def delete_camp_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message:
         await context.bot.send_message(update.effective_chat.id, "Ниче не понял, попробуйте ещё раз.")
         return
@@ -17,12 +17,12 @@ async def add_camp_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard(context))
 
 
-async def admin_update_timetable(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def admin_ask_deleting_camp(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     if query:
         await query.answer()
 
-    context.user_data["text_state"] = add_camp_post
+    context.user_data["text_state"] = delete_camp_post
     await context.bot.send_message(
         update.effective_chat.id,
         "Вы уверены, что хотите удалить кнопку \"лагерь\"? Напишите \"Удалить лагерь\" для подтверждения."
@@ -30,5 +30,5 @@ async def admin_update_timetable(update: Update, context: ContextTypes.DEFAULT_T
 
 
 admin_delete_camp_handlers = [
-    CallbackQueryHandler(admin_update_timetable, pattern="^admin_delete_camp$")
+    CallbackQueryHandler(admin_ask_deleting_camp, pattern="^admin_delete_camp$")
 ]
