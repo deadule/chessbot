@@ -493,8 +493,9 @@ class RepChessDB:
         to_date: datetime.datetime | None = None,
         results_uploaded: bool | None = None
     ) -> list[tuple]:
-        request = "SELECT * FROM tournament WHERE date_time >= ?"
-        values = [from_date]
+        request = "SELECT * FROM tournament WHERE date_time >= ? and tg_channel == ?"
+        # TODO: Сделать разделение по городам, использовать таблицу city.
+        values = [from_date, "repchess"]
         if to_date:
             request += " AND date_time <= ?"
             values.append(to_date)
