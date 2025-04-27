@@ -83,12 +83,12 @@ async def process_tournament_file(update: Update, context: ContextTypes.DEFAULT_
         iofile.seek(0)
         with io.TextIOWrapper(iofile, encoding="utf-8-sig") as text_file:
             results = tuple(csv.DictReader(text_file, delimiter=";"))
-            #try:
-            process_game_results(tournament_id, results)
-            """except Exception as e: # here it is ok I think
+            try:
+                process_game_results(tournament_id, results)
+            except Exception as e: # here it is ok I think
                 await update.message.reply_text("Оу... Не получилось обработать файл. Вы уверены, что загрузили нужный файл?")
                 logger.info(e)
-                return"""
+                return
 
     rep_chess_db.results_uploaded(tournament_id)
     await update.message.reply_text("Результаты обработаны! Игроки могут посмотреть обновленный рейтинг.")

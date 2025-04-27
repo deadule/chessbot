@@ -65,10 +65,11 @@ async def show_registered_users(update: Update, context: ContextTypes.DEFAULT_TY
     registered_list = ""
     registered_users = rep_chess_db.get_registered_users(tournament_id)
     for user_on_tournament in registered_users:
-        if user_on_tournament[2] == 0:
+        public_id = rep_chess_db.get_user_on_user_id(user_on_tournament[2])["public_id"]
+        if public_id == 0:
             # One player have public_id = 0, but swisssystem can't set it as id.
-            user_on_tournament[2] = 1000000
-        registered_list += f"{user_on_tournament[2]}, {user_on_tournament[3]}, , {user_on_tournament[4]}, {user_on_tournament[8]}\n"
+            public_id = 1000000
+        registered_list += f"{public_id}, {user_on_tournament[3]}, , {user_on_tournament[4]}, {user_on_tournament[8]}\n"
 
     if not registered_list:
         await context.bot.send_message(update.effective_chat.id, "Упс... Ни одного участника не зарегистрировалось.")

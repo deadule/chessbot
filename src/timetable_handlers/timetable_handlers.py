@@ -86,7 +86,7 @@ async def process_new_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not text:
         return
 
-    if text.startswith("📅 Расписание на неделю:\n\n"):
+    if text.startswith("📆 Расписание на неделю:\n\n"):
         # update weakly timetable
         photo_id = max(update.channel_post.photo, key = lambda x: x.height).file_id
         rep_chess_db.update_weakly_info(update.channel_post.chat.username, update.channel_post.message_id, photo_id)
@@ -110,6 +110,7 @@ async def process_edited_post(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not text:
         return
 
+    print(text)
     if text.startswith("📅 Расписание на неделю:\n\n"):
         # update weakly timetable
         photo_id = max(update.edited_channel_post.photo, key = lambda x: x.height).file_id

@@ -339,7 +339,15 @@ class RepChessDB:
     def get_user_on_telegram_id(self, telegram_id: int) -> dict:
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT * FROM user WHERE user.telegram_id == ?""", (telegram_id,)
+                """SELECT * FROM user WHERE telegram_id == ?""", (telegram_id,)
+            )
+            result = cursor.fetchone()
+        return dict(result)
+
+    def get_user_on_user_id(self, user_id: int) -> dict:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM user WHERE user_id == ?""", (user_id,)
             )
             result = cursor.fetchone()
         return dict(result)
