@@ -15,12 +15,18 @@ admin_inline_keyboard = InlineKeyboardMarkup([
     [InlineKeyboardButton("Показать список участников", callback_data="admin_show_registered")],
     [InlineKeyboardButton("Выгрузить результаты турнира", callback_data="admin_upload_results")],
     [InlineKeyboardButton("Удалить игрока из турнира", callback_data="admin_delete_user_from_tournament")],
+    
+    [InlineKeyboardButton("Проверить шахматные наборы", callback_data="admin_check_chess_kits")],
+
     [InlineKeyboardButton("Изменить ID игрока", callback_data="admin_change_public_id")],
     [InlineKeyboardButton("Изменить rep-рейтинг игрока", callback_data="admin_change_rep_rating")],
+
     [InlineKeyboardButton("Добавить пост в расписание", callback_data="admin_update_timetable")],
     [InlineKeyboardButton("Удалить пост из расписания", callback_data="admin_delete_timetable")],
+
     [InlineKeyboardButton("Добавить пост для лагеря", callback_data="admin_add_camp")],
     [InlineKeyboardButton("Удалить пост для лагеря", callback_data="admin_delete_camp")],
+    
     [InlineKeyboardButton("💀 Добавить нового админа", callback_data="admin_add_new_admin")],
     [InlineKeyboardButton("💀 Удалить админа", callback_data="admin_delete_admin")],
     [InlineKeyboardButton("💀 Удалить игрока из базы", callback_data="admin_delete_user")],

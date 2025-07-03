@@ -63,7 +63,6 @@ admin_change_rep_rating_handlers = [
 ]
 
 
-# for DRY purposes
 async def send_error_and_prompt(update, context, error_text):
     await update.message.reply_text(error_text)
     await admin_change_rep_rating(update, context)
