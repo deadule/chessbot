@@ -15,13 +15,10 @@ async def delete_forwarded_timetable(update: Update, context: ContextTypes.DEFAU
         tg_channel = update.message.api_kwargs["forward_from_chat"]["username"]
         message_id = update.message.api_kwargs["forward_from_message_id"]
     else:
-        print("LDSKFFFFFFFFF\n")
         tg_channel = update.message.forward_from_chat.username,
         if isinstance(tg_channel, tuple): # idk what does telegram doing, it is something wrong
             tg_channel = tg_channel[0]
         message_id = update.message.forward_from_message_id
-
-    print(tg_channel, message_id, "\n\n\n\n\n\n\n\n\n\n")
 
     rep_chess_db.remove_tournament(
         tg_channel,

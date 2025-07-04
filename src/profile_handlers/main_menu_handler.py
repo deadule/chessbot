@@ -27,9 +27,12 @@ change_profile_keyboard = InlineKeyboardMarkup([
     ],
     [
         InlineKeyboardButton("♞  lichess", callback_data="profile_lichess_rating"),
-        InlineKeyboardButton("♟️  chess.com", callback_data="profile_chesscom_rating")
+        InlineKeyboardButton("♟️  chess.com", callback_data="profile_chesscom_rating"),
     ],
-    [InlineKeyboardButton("<< Назад", callback_data="go_main_profile")],
+    [
+        InlineKeyboardButton("🏙️ Город", callback_data="profile_city"),
+        InlineKeyboardButton("<< Назад", callback_data="go_main_profile")
+    ],
 ])
 
 
@@ -61,6 +64,13 @@ def construct_profile_message(user_db_data: dict) -> str:
         profile_str += f" ├ Фамилия:  `{escape_special_symbols(user_db_data['surname'])}`\n"
     if user_db_data['age']:
         profile_str += f" ├ Возраст:  `{user_db_data['age']}`\n"
+    if user_db_data['city_id']:
+        city_name = rep_chess_db.get_city_on_id(user_db_data['city_id'])
+        if not city_name:
+            logger.error(f"INCONSISTENT CITY DATA: city id {user_db_data['city_id']} not in table CITY")
+            profile_str += " ├ Город:  `Сообщите об ошибке руководителям!`\n"
+        else:
+            profile_str += f" ├ Город:  `{city_name}`\n"
     profile_str = change_last_symbol(profile_str, "├", "└")
     profile_str += f"\n📊 *_Статистика:_*\n"
     profile_str += f" ├ Rep рейтинг:  `{user_db_data['rep_rating']}`\n"

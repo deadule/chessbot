@@ -1,5 +1,6 @@
 import re
 import datetime
+import logging
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHandler
@@ -7,6 +8,9 @@ from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHan
 from databaseAPI import rep_chess_db
 from start import main_menu_reply_keyboard
 from util import escape_special_symbols, construct_timetable_buttons
+
+
+logger = logging.getLogger(__name__)
 
 
 def parse_tournament_post(post: str) -> dict | None:
@@ -154,13 +158,17 @@ async def main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     rep_chess_db.update_user_last_contact(telegram_id)
 
     today = datetime.date.today()
-    tournaments = rep_chess_db.get_tournaments(datetime.datetime(today.year, today.month, today.day, 0, 0, 0))
+    tg_channel = rep_chess_db.get_tg_channel_on_tg_id(telegram_id)
+    if not tg_channel:
+        logger.error(f"CITIES ARE INCONSISTENT. User with telegram id = {telegram_id} has incorrect city id")
+        return
+    tournaments = rep_chess_db.get_tournaments(tg_channel, datetime.datetime(today.year, today.month, today.day, 0, 0, 0))
     message, inline_markup_buttons = construct_timetable_buttons(tournaments, "timetable_tournament")
     message = "🌟  *_Анонсы_*\n" + message
     inline_markup_buttons.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])
     context.user_data["timetable_buttons"] = inline_markup_buttons
 
-    photo_file_id = rep_chess_db.get_photo_id()
+    photo_file_id = rep_chess_db.get_photo_id(tg_channel)
     await context.bot.send_photo(
         update.effective_chat.id,
         photo_file_id,

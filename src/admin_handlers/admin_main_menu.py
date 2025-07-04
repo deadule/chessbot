@@ -26,7 +26,10 @@ admin_inline_keyboard = InlineKeyboardMarkup([
 
     [InlineKeyboardButton("Добавить пост для лагеря", callback_data="admin_add_camp")],
     [InlineKeyboardButton("Удалить пост для лагеря", callback_data="admin_delete_camp")],
-    
+
+    [InlineKeyboardButton("Добавить новый город", callback_data="admin_add_new_city")],
+    [InlineKeyboardButton("Удалить город", callback_data="admin_delete_city")],
+
     [InlineKeyboardButton("💀 Добавить нового админа", callback_data="admin_add_new_admin")],
     [InlineKeyboardButton("💀 Удалить админа", callback_data="admin_delete_admin")],
     [InlineKeyboardButton("💀 Удалить игрока из базы", callback_data="admin_delete_user")],

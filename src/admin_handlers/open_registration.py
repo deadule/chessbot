@@ -12,11 +12,16 @@ async def admin_open_registration(update: Update, context: ContextTypes.DEFAULT_
     query = update.callback_query
     if query:
         await query.answer()
+    if update.message:
+        telegram_id = update.message.from_user.id
+    else:
+        telegram_id = update.callback_query.from_user.id
 
     today = datetime.date.today()
     today_start = datetime.datetime(today.year, today.month, today.day, 0, 0, 0)
     today_end = datetime.datetime(today.year, today.month, today.day, 23, 59, 59)
-    tournaments = rep_chess_db.get_tournaments(today_start, today_end)
+    tg_channel = rep_chess_db.get_tg_channel_on_tg_id(telegram_id)
+    tournaments = rep_chess_db.get_tournaments(tg_channel, today_start, today_end)
     message, buttons = construct_timetable_buttons(tournaments, "open_registration")
     message = "🌟  *_Сегодняшние Турниры:_*\n" + message
     buttons.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])

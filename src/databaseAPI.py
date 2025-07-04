@@ -334,7 +334,15 @@ class RepChessDB:
                 """UPDATE user SET age = ?, last_contact = ? WHERE telegram_id = ?""",
                 (age, datetime.datetime.now(), telegram_id)
             )
-        logger.debug(f"update lichess rating {telegram_id=}, {age=}")
+        logger.debug(f"update user age {telegram_id=}, {age=}")
+
+    def update_user_city_id(self, telegram_id: int, city_id: int):
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET city_id = ?, last_contact = ? WHERE telegram_id = ?""",
+                (city_id, datetime.datetime.now(), telegram_id)
+            )
+        logger.debug(f"update user city id {telegram_id=}, {city_id=}")
 
     def get_user_on_telegram_id(self, telegram_id: int) -> dict:
         with self.conn:
@@ -489,13 +497,13 @@ class RepChessDB:
 
     def get_tournaments(
         self,
+        tg_channel: str,
         from_date: datetime.datetime,
         to_date: datetime.datetime | None = None,
         results_uploaded: bool | None = None
     ) -> list[tuple]:
         request = "SELECT * FROM tournament WHERE date_time >= ? and tg_channel == ?"
-        # TODO: Сделать разделение по городам, использовать таблицу city.
-        values = [from_date, "repchess"]
+        values = [from_date, tg_channel]
         if to_date:
             request += " AND date_time <= ?"
             values.append(to_date)
@@ -547,13 +555,90 @@ class RepChessDB:
 
     # CITY =========================================================
 
-    # TODO: переделать нормально, tg_channel в аргументы
-    def get_photo_id(self):
+    def add_city(self, tg_channel: str, name: str):
+        with self.conn:
+            self.conn.execute(
+                """INSERT INTO city (
+                    city_id,
+                    name,
+                    tg_channel,
+                    timetable_message_id,
+                    timetable_photo
+                ) VALUES(?, ?, ?, ?, ?)""",
+                (None, name, tg_channel, None, None) 
+            )
+
+    def get_photo_id(self, tg_channel: str) -> str:
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT timetable_photo FROM city WHERE tg_channel = 'repchess'"""
+                """SELECT timetable_photo FROM city WHERE tg_channel = ?""",
+                (tg_channel,)
             )
         return cursor.fetchone()[0]
+
+    def get_city_on_id(self, city_id: int) -> str | None:
+        """
+        Return city name on city id. If city_id isn't in table, return None.
+        """
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT name FROM city WHERE city_id = ?""",
+                (city_id,)
+            )
+        city = cursor.fetchone()[0]
+        if not city:
+            return None
+        return city
+
+    def get_id_on_city_name(self, city: str) -> int | None:
+        """
+        Return city id on name. If city with name isn't in table, return None.
+        """
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT city_id FROM city WHERE name = ?""",
+                (city,)
+            )
+        city_id = cursor.fetchone()[0]
+        if not city_id:
+            return None
+        return int(city_id)
+
+    def get_cities_names(self) -> list[str]:
+        with self.conn:
+            cursor = self.conn.execute("""SELECT name FROM city""")
+        return list(city_raw[0] for city_raw in cursor.fetchall())
+
+    def get_tg_channel_on_tg_id(self, telegram_id: int) -> str:
+        """
+        Return tg channel of city where user telegram id is. If city id isn't in table, return None.
+        """
+        user = self.get_user_on_telegram_id(telegram_id)
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT tg_channel FROM city WHERE city_id = ?""",
+                (user['city_id'],)
+            )
+        tg_channel = cursor.fetchone()
+        if not tg_channel:
+            return None
+        return tg_channel[0]
+
+    def delete_city(self, city: str):
+        """
+        Users with deleted city now set to Moscow (city_id = 1)
+        """
+        city_id = self.get_id_on_city_name(city)
+        with self.conn:
+            self.conn.execute(
+                """UPDATE user SET city_id = 1 WHERE city_id = ?""",
+                (city_id,)
+            )
+
+            self.conn.execute(
+                """DELETE FROM city WHERE city_id = ?""",
+                (city_id,)
+            )
 
     def update_weakly_info(self, channel, message_id, photo_id):
         with self.conn:
