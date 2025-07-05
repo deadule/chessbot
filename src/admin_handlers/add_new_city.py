@@ -15,6 +15,7 @@ async def process_adding_city(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not tg_channel.startswith("@"):
         await send_error_and_resume(update, context, "Тег канала должен начинаться с @. Попробуйте заново.")
         return
+    tg_channel = tg_channel[1:]
     if len(tg_channel) < 4 or len(tg_channel) > 100:
         await send_error_and_resume(update, context, "Ну вы серьёзно думаете, что такой тег существует? Попробуйте ещё раз.")
         return

@@ -13,7 +13,7 @@ from util import escape_special_symbols, construct_timetable_buttons
 logger = logging.getLogger(__name__)
 
 
-def parse_tournament_post(post: str) -> dict | None:
+def parse_tournament_post(post: str, update: Update) -> dict | None:
     """
     Parse post from channel and return dict if this post have correct format:
     {
@@ -22,6 +22,20 @@ def parse_tournament_post(post: str) -> dict | None:
         address: ...,
     }
     """
+    if post.startswith("📆 Расписание на неделю:\n\n") or post.startswith("📅 Расписание на неделю:\n\n") or post.startswith("📅📅📅📅📅📅📅 📅📅📅📅📅📅📅\n\n"):
+        # update weakly timetable
+        print(update)
+        if update.channel_post:
+            post = update.channel_post
+            chat = post.chat
+        else:
+            post = update.message
+            chat = post.forward_from_chat
+
+        photo_id = max(post.photo, key = lambda x: x.height).file_id
+        rep_chess_db.update_weakly_info(chat.username, post.message_id, photo_id)
+        return dict()
+
     re_match = re.search(r"\n\d+.\d+.?\n\d+:\d+.?\nАдрес:.*$", post)
     if not re_match:
         return None
@@ -56,11 +70,14 @@ async def process_forwarded_post(update: Update, context: ContextTypes.DEFAULT_T
     if not text:
         return
 
-    tournament = parse_tournament_post(text)
-    if not tournament:
+    tournament = parse_tournament_post(text, update)
+    if tournament is None:
         await context.bot.send_message(update.effective_chat.id, "Пост не подходит под формат")
         return
-
+    if not tournament:
+        # It is weakly post
+        await context.bot.send_message(update.effective_chat.id, "Запрос обработан. Проверьте, что все успешно.", reply_markup=main_menu_reply_keyboard(context))
+        return
     if update.message.api_kwargs:
         tournament["tg_channel"] = update.message.api_kwargs["forward_from_chat"]["username"]
         tournament["message_id"] = update.message.api_kwargs["forward_from_message_id"]
@@ -89,13 +106,7 @@ async def process_new_post(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not text:
         return
 
-    if text.startswith("📆 Расписание на неделю:\n\n") or text.startswith("📅 Расписание на неделю:\n\n"):
-        # update weakly timetable
-        photo_id = max(update.channel_post.photo, key = lambda x: x.height).file_id
-        rep_chess_db.update_weakly_info(update.channel_post.chat.username, update.channel_post.message_id, photo_id)
-        return
-
-    tournament = parse_tournament_post(text)
+    tournament = parse_tournament_post(text, update)
     if not tournament:
         return
     tournament["tg_channel"] = update.channel_post.chat.username
@@ -113,14 +124,7 @@ async def process_edited_post(update: Update, context: ContextTypes.DEFAULT_TYPE
     if not text:
         return
 
-    print(text)
-    if text.startswith("📅 Расписание на неделю:\n\n"):
-        # update weakly timetable
-        photo_id = max(update.edited_channel_post.photo, key = lambda x: x.height).file_id
-        rep_chess_db.update_weakly_info(update.edited_channel_post.chat.username, update.edited_channel_post.message_id, photo_id)
-        return
-
-    tournament = parse_tournament_post(text)
+    tournament = parse_tournament_post(text, update)
     if not tournament:
         return
 

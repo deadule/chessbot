@@ -40,7 +40,7 @@ async def profile_city_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     buttons.append([InlineKeyboardButton("<< Назад", callback_data="go_main_menu")])
     message = await context.bot.send_message(
         update.effective_chat.id,
-        "*Выберите ваш город. Исходя из него Вам будет показываться расписание*",
+        "*Выберите Ваш город. Исходя из него Вам будет показываться расписание*",
         reply_markup=InlineKeyboardMarkup(buttons),
         parse_mode="markdown"
     )
