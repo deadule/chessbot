@@ -25,7 +25,7 @@ async def process_adding_city(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     rep_chess_db.add_city(tg_channel, city)
     context.user_data["text_state"] = None
-    await update.message.reply_text(f"Вы добавили город {city} с каналом {tg_channel}", reply_markup=main_menu_reply_keyboard(context))
+    await update.message.reply_text(f"Вы добавили город {city} с каналом @{tg_channel}", reply_markup=main_menu_reply_keyboard(context))
 
 
 async def admin_add_new_city(update: Update, context: ContextTypes.DEFAULT_TYPE):

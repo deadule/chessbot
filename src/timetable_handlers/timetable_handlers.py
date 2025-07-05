@@ -21,6 +21,7 @@ def parse_tournament_post(post: str, update: Update) -> dict | None:
         date_time: datetime,
         address: ...,
     }
+    Also parse weakly post, parse it, change db and return empty dict.
     """
     if post.startswith("📆 Расписание на неделю:\n\n") or post.startswith("📅 Расписание на неделю:\n\n") or post.startswith("📅📅📅📅📅📅📅 📅📅📅📅📅📅📅\n\n"):
         # update weakly timetable
@@ -176,13 +177,21 @@ async def main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data["timetable_buttons"] = inline_markup_buttons
 
     photo_file_id = rep_chess_db.get_photo_id(tg_channel)
-    await context.bot.send_photo(
-        update.effective_chat.id,
-        photo_file_id,
-        caption=message,
-        reply_markup=InlineKeyboardMarkup(inline_markup_buttons),
-        parse_mode="MarkdownV2"
-    )
+    if photo_file_id:
+        await context.bot.send_photo(
+            update.effective_chat.id,
+            photo_file_id,
+            caption=message,
+            reply_markup=InlineKeyboardMarkup(inline_markup_buttons),
+            parse_mode="MarkdownV2"
+        )
+    else:
+        await context.bot.send_message(
+            update.effective_chat.id,
+            message,
+            reply_markup=InlineKeyboardMarkup(inline_markup_buttons),
+            parse_mode="MarkdownV2"
+        )
 
 
 timetable_main_message_handler = MessageHandler(filters.Regex("^📅  Расписание$"), main_message_handler)
