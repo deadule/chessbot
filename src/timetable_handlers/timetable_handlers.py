@@ -30,7 +30,10 @@ def parse_tournament_post(post: str, update: Update) -> dict | None:
             chat = post.chat
         else:
             post = update.message
-            chat = post.forward_from_chat
+            if post.api_kwargs:
+                chat = post.api_kwargs['forward_from_chat']
+            else:
+                chat = post.forward_from_chat
 
         photo_id = max(post.photo, key = lambda x: x.height).file_id
         rep_chess_db.update_weakly_info(chat.username, post.message_id, photo_id)
