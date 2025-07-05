@@ -27,16 +27,16 @@ def parse_tournament_post(post: str, update: Update) -> dict | None:
         print(update)
         if update.channel_post:
             post = update.channel_post
-            chat = post.chat
+            channel = post.chat.username
         else:
             post = update.message
             if post.api_kwargs:
-                chat = post.api_kwargs['forward_from_chat']
+                channel = post.api_kwargs['forward_from_chat']['username']
             else:
-                chat = post.forward_from_chat
+                channel = post.forward_from_chat.username
 
         photo_id = max(post.photo, key = lambda x: x.height).file_id
-        rep_chess_db.update_weakly_info(chat.username, post.message_id, photo_id)
+        rep_chess_db.update_weakly_info(channel, post.message_id, photo_id)
         return dict()
 
     re_match = re.search(r"\n\d+.\d+.?\n\d+:\d+.?\nАдрес:.*$", post)
