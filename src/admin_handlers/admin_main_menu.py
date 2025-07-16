@@ -7,7 +7,7 @@ from start import go_main_menu
 
 # Only one person have super admin permissions.
 SUPER_ADMIN_ID = 928688258
-
+ 
 
 admin_inline_keyboard = InlineKeyboardMarkup([
     [InlineKeyboardButton("Открыть регистрацию на турнир", callback_data="admin_open_registration")],
