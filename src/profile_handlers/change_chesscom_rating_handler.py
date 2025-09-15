@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, CallbackQueryHandler
 
 from databaseAPI import rep_chess_db
-from main_menu_handler import main_menu_handler
+from .main_menu_handler import main_menu_handler
 
 
 async def process_input_chesscom_rating(update: Update, context: ContextTypes.DEFAULT_TYPE):

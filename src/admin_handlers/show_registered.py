@@ -3,7 +3,7 @@ from telegram.ext import CallbackQueryHandler, ContextTypes
 
 from databaseAPI import rep_chess_db
 from util import construct_timetable_buttons
-from admin_main_menu import admin_inline_keyboard
+from .admin_main_menu import admin_inline_keyboard
 
 
 def new_registered_users_keyboard(tournament_id: int):

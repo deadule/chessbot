@@ -219,6 +219,16 @@ class RepChessDB:
                  age)
             )
         logger.debug(f"register user {telegram_id}, {public_id}, {is_admin}, {name}, {surname}, {nickname}, {city_id}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating} {age}")
+        
+    def check_for_user_in_db_return_nickname(self, telegram_id: int):
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT nickname FROM user WHERE telegram_id = ?""",
+                (telegram_id,)
+            )
+            result = cursor.fetchone()
+        
+        return result[0] if result else None
 
     def update_user_public_id(self, old_public_id: int, public_id: int) -> bool:
         """

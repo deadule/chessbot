@@ -14,11 +14,6 @@ from telegram.ext import (
 
 # Add to python path some directories
 sys.path.insert(0, os.path.abspath("src"))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "profile_handlers")))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "admin_handlers")))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "timetable_handlers")))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "camp_handlers")))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "registration_handlers")))
 
 
 from start import start_handlers
@@ -27,6 +22,7 @@ from admin_handlers import admin_callback_handlers
 from profile_handlers import profile_callback_handlers
 from timetable_handlers import timetable_callback_handlers, process_new_post, process_edited_post
 from camp_handlers import camp_callback_handlers
+from lessons_handlers import lessons_callback_handlers
 from registration_handlers import registration_callback_handlers
 
 
@@ -131,6 +127,7 @@ def start_tg_bot(token: str):
     application.add_handlers(profile_callback_handlers)
     application.add_handlers(timetable_callback_handlers)
     application.add_handlers(camp_callback_handlers)
+    application.add_handlers(lessons_callback_handlers)
     application.add_handlers(registration_callback_handlers)
     application.add_handler(MessageHandler(filters.Document.ALL, global_file_message_handler))
     application.add_handler(MessageHandler(filters.FORWARDED, global_forwarded_message_handler))
