@@ -85,7 +85,7 @@ async def lessons_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 
-    # if user[subscription][status] = active
+    # if user[active_subscription] = active
     # else: 
     #  'Для доступа к урокам нужно оформить подписку! Перейдите в главное меню -> подписка для ее оформления'
     # InlineKeyboardButton("Завершить")

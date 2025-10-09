@@ -1,5 +1,6 @@
 import sqlite3
 import datetime
+from zoneinfo import ZoneInfo
 import logging
 import os
 import sys
@@ -89,6 +90,16 @@ class RepChessDB:
                     age INTEGER,
                     FOREIGN KEY (city_id) REFERENCES city (city_id)
                 );
+                
+                CREATE TABLE IF NOT EXISTS subscription (
+                    telegram_id INTEGER PRIMARY KEY,
+                    active_subscription BOOL,
+                    subscription_valid_until datetime,
+                    subscription_payment_method_id TEXT,
+                    subscription_auto_renew BOOL,
+                    subscription_next_charge datetime,
+                    user_phone TEXT
+                );
 
                 CREATE TABLE IF NOT EXISTS tournament (
                     tournament_id INTEGER PRIMARY KEY,
@@ -157,7 +168,6 @@ class RepChessDB:
     def __del__(self):
         if hasattr(self, "conn"):
             self.conn.close()
-
     # USER =========================================================
 
     def register_user(
@@ -203,32 +213,205 @@ class RepChessDB:
                     age
                 ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (None,
-                 telegram_id,
-                 public_id,
-                 is_admin,
-                 name,
-                 surname,
-                 nickname,
-                 city_id,
-                 first_contact if first_contact else datetime.datetime.now(),
-                 last_contact,
-                 lichess_rating,
-                 chesscom_rating,
-                 rep_rating,
-                 games_played,
-                 age)
+                telegram_id,
+                public_id,
+                is_admin,
+                name,
+                surname,
+                nickname,
+                city_id,
+                first_contact if first_contact else datetime.datetime.now(),
+                last_contact,
+                lichess_rating,
+                chesscom_rating,
+                rep_rating,
+                games_played,
+                age)
+            )
+            self.conn.execute(
+                """INSERT OR IGNORE INTO subscription (
+                    telegram_id,
+                    active_subscription,
+                    subscription_valid_until,
+                    subscription_payment_method_id,
+                    subscription_auto_renew,
+                    subscription_next_charge,
+                    user_phone
+                ) VALUES (?, 0, NULL, NULL, 0, NULL, NULL)""",
+                (telegram_id,)
             )
         logger.debug(f"register user {telegram_id}, {public_id}, {is_admin}, {name}, {surname}, {nickname}, {city_id}, {first_contact}, {last_contact}, {lichess_rating}, {chesscom_rating}, {rep_rating} {age}")
         
-    def check_for_user_in_db_return_nickname(self, telegram_id: int):
+    # SUBSCRIPTION =========================================================
+    
+    def check_user_active_subscription(self, telegram_id: int) -> bool:
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT nickname FROM user WHERE telegram_id = ?""",
+                """SELECT active_subscription, subscription_valid_until FROM subscription WHERE telegram_id = ?""",
                 (telegram_id,)
             )
             result = cursor.fetchone()
         
-        return result[0] if result else None
+        if not result:
+            return False
+
+        subscription_flag = bool(result["active_subscription"])
+
+        if not subscription_flag:
+            return False
+
+        valid_until_value = result["subscription_valid_until"]
+
+        if not valid_until_value:
+            return subscription_flag
+
+        if isinstance(valid_until_value, str):
+            try:
+                valid_until = datetime.datetime.fromisoformat(valid_until_value)
+            except ValueError:
+                logger.warning(
+                    "Unable to parse subscription_valid_until '%s' for telegram_id %s",
+                    valid_until_value,
+                    telegram_id,
+                )
+                return subscription_flag
+        else:
+            valid_until = valid_until_value
+
+        if valid_until.tzinfo is None:
+            valid_until = valid_until.replace(tzinfo=MOSCOW_TZ)
+        else:
+            valid_until = valid_until.astimezone(MOSCOW_TZ)
+
+        now = datetime.datetime.now(MOSCOW_TZ)
+
+        if valid_until < now:
+            with self.conn:
+                self.conn.execute(
+                    """UPDATE subscription SET active_subscription = 0 WHERE telegram_id = ?""",
+                    (telegram_id,)
+                )
+            return False
+
+        return True
+    
+    def ensure_subscription_row(self, telegram_id: int) -> None:
+        """Make sure a subscription row exists for this user."""
+        with self.conn:
+            self.conn.execute(
+                """
+                INSERT OR IGNORE INTO subscription (telegram_id)
+                VALUES (?)
+                """,
+                (telegram_id,),
+            )
+
+    def set_user_subscription(
+        self,
+        telegram_id: int,
+        is_active: bool,
+        valid_until: datetime.datetime | None = None,
+    ) -> None:
+        with self.conn:
+            self.conn.execute(
+                """UPDATE subscription
+                SET active_subscription = ?,
+                    subscription_valid_until = ?
+                WHERE telegram_id = ?""",
+                (is_active, valid_until, telegram_id),
+            )
+
+    def update_subscription_payment_method(
+        self,
+        telegram_id: int,
+        payment_method_id: str | None,
+    ) -> None:
+        with self.conn:
+            self.conn.execute(
+                """UPDATE subscription
+                SET subscription_payment_method_id = ?
+                WHERE telegram_id = ?""",
+                (payment_method_id, telegram_id),
+            )
+
+    def update_subscription_auto_renew(
+        self,
+        telegram_id: int,
+        auto_renew: bool,
+    ) -> None:
+        with self.conn:
+            self.conn.execute(
+                """UPDATE subscription
+                SET subscription_auto_renew = ?
+                WHERE telegram_id = ?""",
+                (auto_renew, telegram_id),
+            )
+
+    def update_subscription_next_charge(
+        self,
+        telegram_id: int,
+        next_charge: datetime.datetime | None,
+    ) -> None:
+        with self.conn:
+            self.conn.execute(
+                """UPDATE subscription
+                SET subscription_next_charge = ?
+                WHERE telegram_id = ?""",
+                (next_charge, telegram_id),
+            )
+
+    def get_subscription_details(self, telegram_id: int) -> dict | None:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT active_subscription, subscription_valid_until, subscription_payment_method_id,
+                           subscription_auto_renew, subscription_next_charge, user_phone
+                    FROM subscription WHERE telegram_id = ?""",
+                (telegram_id,)
+            )
+            row = cursor.fetchone()
+
+        return dict(row) if row else None
+
+    def get_auto_renew_subscriptions(self) -> list[dict]:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT telegram_id, subscription_valid_until, subscription_payment_method_id,
+                           subscription_next_charge
+                    FROM subscription
+                    WHERE active_subscription = 1 AND subscription_auto_renew = 1
+                          AND subscription_payment_method_id IS NOT NULL"""
+            )
+
+        return [dict(row) for row in cursor.fetchall()]
+
+    def get_user_phone(self, telegram_id: int) -> str | None:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT user_phone FROM subscription WHERE telegram_id = ?""",
+                (telegram_id,)
+            )
+            row = cursor.fetchone()
+
+        return row[0] if row else None
+
+    def set_user_phone(self, telegram_id: int, phone: str) -> bool:
+        # debug
+        for row in self.conn.execute("PRAGMA database_list"):
+            logging.info("DB attached: %s -> %s", row[1], row[2])
+            
+        with self.conn:
+            cur = self.conn.execute(
+                """
+                INSERT INTO subscription (telegram_id, user_phone)
+                VALUES (?, ?)
+                ON CONFLICT(telegram_id) DO UPDATE
+                SET user_phone = excluded.user_phone
+                """,
+            (telegram_id, phone),
+            )
+        return True
+            
+    # USER =========================================================
 
     def update_user_public_id(self, old_public_id: int, public_id: int) -> bool:
         """
@@ -264,7 +447,17 @@ class RepChessDB:
         except ValueError:
             pass
         return True
-
+           
+    def check_for_user_in_db_return_nickname(self, telegram_id: int):
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT nickname FROM user WHERE telegram_id = ?""",
+                (telegram_id,)
+            )
+            result = cursor.fetchone()
+        
+        return result[0] if result else None
+    
     def update_user_name(self, telegram_id: int, name: str):
         with self.conn:
             self.conn.execute(
@@ -773,3 +966,4 @@ class RepChessDB:
 
 
 rep_chess_db = RepChessDB()
+MOSCOW_TZ = ZoneInfo("Europe/Moscow")

@@ -24,6 +24,7 @@ from timetable_handlers import timetable_callback_handlers, process_new_post, pr
 from camp_handlers import camp_callback_handlers
 from lessons_handlers import lessons_callback_handlers
 from registration_handlers import registration_callback_handlers
+from payments import initialize_auto_renew_tasks, payment_callback_handlers
 
 
 # Configure logging
@@ -120,7 +121,13 @@ async def global_file_message_handler(update: Update, context: ContextTypes.DEFA
 
 def start_tg_bot(token: str):
     prs = PicklePersistence(filepath=".bot_data_cache")
-    application = ApplicationBuilder().token(token).persistence(persistence=prs).build()
+    application = (
+        ApplicationBuilder()
+        .token(token)
+        .persistence(persistence=prs)
+        .post_init(initialize_auto_renew_tasks)
+        .build()
+    )
 
     application.add_handlers(start_handlers)
     application.add_handlers(admin_callback_handlers)
@@ -129,6 +136,7 @@ def start_tg_bot(token: str):
     application.add_handlers(camp_callback_handlers)
     application.add_handlers(lessons_callback_handlers)
     application.add_handlers(registration_callback_handlers)
+    application.add_handlers(payment_callback_handlers)
     application.add_handler(MessageHandler(filters.Document.ALL, global_file_message_handler))
     application.add_handler(MessageHandler(filters.FORWARDED, global_forwarded_message_handler))
     application.add_handler(MessageHandler(filters.ALL, global_message_handler))
