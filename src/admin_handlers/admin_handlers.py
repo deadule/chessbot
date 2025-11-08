@@ -15,6 +15,7 @@ from .delete_user_from_tournament import admin_delete_user_from_tournament_handl
 from .check_chess_availability import admin_check_chess_kits_handlers
 from .add_new_city import admin_add_new_city_handlers
 from .delete_city import admin_delete_city_handlers
+from .video_management import admin_video_management_handlers
 
 
 admin_callback_handlers = admin_main_menu_handlers + \
@@ -33,4 +34,5 @@ admin_add_new_admin_handlers + \
 admin_delete_admin_handlers + \
 admin_delete_user_from_tournament_handlers + \
 admin_add_new_city_handlers + \
-admin_delete_city_handlers
+admin_delete_city_handlers + \
+admin_video_management_handlers

@@ -2,7 +2,7 @@ import re
 import datetime
 import logging
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, error
 from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHandler
 
 from databaseAPI import rep_chess_db
@@ -25,19 +25,29 @@ def parse_tournament_post(post: str, update: Update) -> dict | None:
     """
     if post.startswith("📆 Расписание на неделю:\n\n") or post.startswith("📅 Расписание на неделю:\n\n") or post.startswith("📅📅📅📅📅📅📅 📅📅📅📅📅📅📅\n\n"):
         # update weakly timetable
-        print(update)
+        logger.debug(f"Processing weekly timetable post: {update}")
         if update.channel_post:
-            post = update.channel_post
-            channel = post.chat.username
+            post_obj = update.channel_post
+            channel = post_obj.chat.username
+            message_id = post_obj.message_id
         else:
-            post = update.message
-            if post.api_kwargs:
-                channel = post.api_kwargs['forward_from_chat']['username']
+            post_obj = update.message
+            if post_obj.api_kwargs:
+                channel = post_obj.api_kwargs['forward_from_chat']['username']
+                message_id = post_obj.api_kwargs['forward_from_message_id']
             else:
-                channel = post.forward_from_chat.username
+                channel = post_obj.forward_from_chat.username
+                message_id = post_obj.forward_from_message_id
 
-        photo_id = max(post.photo, key = lambda x: x.height).file_id
-        rep_chess_db.update_weakly_info(channel, post.message_id, photo_id)
+        # Extract photo if available
+        photo_id = None
+        if post_obj.photo:
+            try:
+                photo_id = max(post_obj.photo, key=lambda x: x.height).file_id
+            except (AttributeError, ValueError) as e:
+                logger.warning(f"Could not extract photo from post: {e}")
+        
+        rep_chess_db.update_weakly_info(channel, message_id, photo_id)
         return dict()
 
     re_match = re.search(r"\n\d+.\d+.?\n\d+:\d+.?\nАдрес:.*$", post)
@@ -178,13 +188,25 @@ async def main_message_handler(update: Update, context: ContextTypes.DEFAULT_TYP
 
     photo_file_id = rep_chess_db.get_photo_id(tg_channel)
     if photo_file_id:
-        await context.bot.send_photo(
-            update.effective_chat.id,
-            photo_file_id,
-            caption=message,
-            reply_markup=InlineKeyboardMarkup(inline_markup_buttons),
-            parse_mode="MarkdownV2"
-        )
+        try:
+            await context.bot.send_photo(
+                update.effective_chat.id,
+                photo_file_id,
+                caption=message,
+                reply_markup=InlineKeyboardMarkup(inline_markup_buttons),
+                parse_mode="MarkdownV2"
+            )
+        except error.BadRequest as e:
+            # Photo file ID is invalid or expired, fall back to text message
+            logger.warning(f"Invalid photo file ID for channel {tg_channel}: {e}")
+            # Clear invalid photo from database
+            rep_chess_db.update_weakly_info(tg_channel, None, None)
+            await context.bot.send_message(
+                update.effective_chat.id,
+                message,
+                reply_markup=InlineKeyboardMarkup(inline_markup_buttons),
+                parse_mode="MarkdownV2"
+            )
     else:
         await context.bot.send_message(
             update.effective_chat.id,

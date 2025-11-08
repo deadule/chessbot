@@ -143,6 +143,18 @@ class RepChessDB:
                     FOREIGN KEY (black_user_id) REFERENCES user (user_id)
                 );
 
+                CREATE TABLE IF NOT EXISTS videos (
+                    id INTEGER PRIMARY KEY,
+                    file_id_480p TEXT,
+                    file_id_1080p TEXT,
+                    title TEXT,
+                    description TEXT,
+                    category TEXT,
+                    lesson_number INTEGER,
+                    original_file_id TEXT,
+                    processing_status TEXT DEFAULT 'pending'
+                );
+
                 END;
                 """
             )
@@ -621,6 +633,201 @@ class RepChessDB:
 
         logger.debug(f"update user {public_id=} is_admin to False")
         return user["name"] + " " + (user["surname"] if user["surname"] else "") + " " + (user["nickname"] if user["nickname"] else "")
+
+    # VIDEOS =========================================================
+
+    def add_video(self, file_id_480p: str = None, file_id_1080p: str = None, title: str = None, description: str = None, category: str = None, lesson_number: int = None, original_file_id: str = None, processing_status: str = "pending"):
+        with self.conn:
+            self.conn.execute(
+                """INSERT INTO videos (file_id_480p, file_id_1080p, title, description, category, lesson_number, original_file_id, processing_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (file_id_480p, file_id_1080p, title, description, category, lesson_number, original_file_id, processing_status)
+            )
+        logger.debug(f"add video {file_id_480p=}, {file_id_1080p=}, {title=}, {category=}, {lesson_number=}, {processing_status=}")
+    
+    def update_video_quality(self, video_id: int, file_id_480p: str = None, file_id_1080p: str = None, processing_status: str = None):
+        """Update video quality file_ids and processing status"""
+        updates = []
+        values = []
+        
+        if file_id_480p is not None:
+            updates.append("file_id_480p = ?")
+            values.append(file_id_480p)
+        
+        if file_id_1080p is not None:
+            updates.append("file_id_1080p = ?")
+            values.append(file_id_1080p)
+        
+        if processing_status is not None:
+            updates.append("processing_status = ?")
+            values.append(processing_status)
+        
+        if not updates:
+            return False
+        
+        values.append(video_id)
+        
+        with self.conn:
+            self.conn.execute(
+                f"""UPDATE videos SET {', '.join(updates)} WHERE id = ?""",
+                values
+            )
+        logger.debug(f"update video quality {video_id=}, {file_id_480p=}, {file_id_1080p=}, {processing_status=}")
+        return True
+    
+    def get_videos_by_category(self, category: str) -> list[dict]:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM videos WHERE category = ?""",
+                (category,)
+            )
+        return [dict(row) for row in cursor.fetchall()]
+    
+    def get_all_videos(self) -> list[dict]:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM videos ORDER BY category, lesson_number ASC"""
+            )
+        return [dict(row) for row in cursor.fetchall()]
+    
+    def get_videos_by_category_ordered(self, category: str) -> list[dict]:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM videos WHERE category = ? ORDER BY lesson_number ASC""",
+                (category,)
+            )
+        return [dict(row) for row in cursor.fetchall()]
+    
+    def get_next_lesson_number(self, category: str) -> int:
+        """Get the next lesson number for a given category"""
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT MAX(lesson_number) FROM videos WHERE category = ?""",
+                (category,)
+            )
+        result = cursor.fetchone()
+        max_lesson = result[0] if result[0] is not None else 0
+        return max_lesson + 1
+    
+    def get_video_by_id(self, video_id: int) -> dict | None:
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM videos WHERE id = ?""",
+                (video_id,)
+            )
+        result = cursor.fetchone()
+        return dict(result) if result else None
+    
+    def delete_video(self, video_id: int) -> bool:
+        with self.conn:
+            cursor = self.conn.execute(
+                """DELETE FROM videos WHERE id = ?""",
+                (video_id,)
+            )
+        if cursor.rowcount == 0:
+            logger.warning(f"Attempted to delete non-existent video {video_id=}")
+            return False
+        logger.debug(f"delete video {video_id=}")
+        return True
+    
+    def update_video_metadata(self, video_id: int, title: str, description: str) -> bool:
+        with self.conn:
+            cursor = self.conn.execute(
+                """UPDATE videos SET title = ?, description = ? WHERE id = ?""",
+                (title, description, video_id)
+            )
+        if cursor.rowcount == 0:
+            logger.warning(f"Attempted to update non-existent video {video_id=}")
+            return False
+        logger.debug(f"update video metadata {video_id=}, {title=}")
+        return True
+
+    # CATEGORIES =========================================================
+
+    def get_all_categories(self) -> list[str]:
+        """Get all unique categories from videos table"""
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT DISTINCT category FROM videos ORDER BY category ASC"""
+            )
+        return [row[0] for row in cursor.fetchall() if row[0]]
+    
+    def add_category(self, category_name: str) -> bool:
+        """Add a new category (just creates a placeholder video entry)"""
+        try:
+            with self.conn:
+                self.conn.execute(
+                    """INSERT INTO videos (file_id_480p, file_id_1080p, title, description, category, lesson_number, original_file_id, processing_status) 
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    ("placeholder", "placeholder", f"Категория {category_name}", "", category_name, 0, "placeholder", "completed")
+                )
+            logger.debug(f"add category {category_name=}")
+            return True
+        except Exception as e:
+            logger.error(f"Error adding category {category_name}: {e}")
+            return False
+    
+    def delete_category(self, category_name: str) -> bool:
+        """Delete a category and all its videos"""
+        try:
+            with self.conn:
+                cursor = self.conn.execute(
+                    """DELETE FROM videos WHERE category = ?""",
+                    (category_name,)
+                )
+            logger.debug(f"delete category {category_name=}, deleted {cursor.rowcount} videos")
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting category {category_name}: {e}")
+            return False
+    
+    def category_exists(self, category_name: str) -> bool:
+        """Check if category exists"""
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT COUNT(*) FROM videos WHERE category = ?""",
+                (category_name,)
+            )
+        return cursor.fetchone()[0] > 0
+    
+    def get_videos_by_quality(self, quality: str) -> list[dict]:
+        """Get videos that have the specified quality available"""
+        if quality == "480p":
+            field = "file_id_480p"
+        elif quality == "1080p":
+            field = "file_id_1080p"
+        else:
+            return []
+        
+        with self.conn:
+            cursor = self.conn.execute(
+                f"""SELECT * FROM videos WHERE {field} IS NOT NULL AND {field} != 'placeholder' AND processing_status = 'completed'""",
+            )
+        return [dict(row) for row in cursor.fetchall()]
+    
+    def get_videos_pending_processing(self) -> list[dict]:
+        """Get videos that are pending processing"""
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM videos WHERE processing_status = 'pending'""",
+            )
+        return [dict(row) for row in cursor.fetchall()]
+    
+    def get_video_file_id(self, video_id: int, quality: str) -> str | None:
+        """Get file_id for specific video and quality"""
+        if quality == "480p":
+            field = "file_id_480p"
+        elif quality == "1080p":
+            field = "file_id_1080p"
+        else:
+            return None
+        
+        with self.conn:
+            cursor = self.conn.execute(
+                f"""SELECT {field} FROM videos WHERE id = ? AND processing_status = 'completed'""",
+                (video_id,)
+            )
+        result = cursor.fetchone()
+        return result[0] if result and result[0] != "placeholder" else None
 
     # TOURNAMENT =========================================================
 

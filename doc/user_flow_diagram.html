@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>REP Chess Bot - User Flow Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1976d2;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #424242;
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 10px;
+            margin-top: 40px;
+        }
+        .diagram-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .legend {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .legend h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        .legend-item {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .note {
+            background: #fff3e0;
+            padding: 15px;
+            border-left: 4px solid #ff9800;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 REP Chess Bot - User Flow Diagram</h1>
+        
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-item"><strong>Entry Point:</strong> /start command</div>
+            <div class="legend-item"><strong>User Flows:</strong> Regular user interactions</div>
+            <div class="legend-item"><strong>Admin Flows:</strong> Admin-only features (requires /admin command)</div>
+            <div class="legend-item"><strong>Decision Points:</strong> Conditional logic (subscription check, admin check, etc.)</div>
+        </div>
+
+        <h2>1. Main User Flow - Entry & Navigation</h2>
+        <div class="diagram-container">
+            <div class="mermaid">
+flowchart TD
+    Start([/start Command]) --> CheckUser{User has<br/>nickname?}
+    CheckUser -->|No| NewUser[New User:<br/>Request Nickname]
+    CheckUser -->|Yes| ExistingUser[Existing User:<br/>Show Welcome]
+    NewUser --> CollectNick[Collect Nickname]
+    CollectNick --> MainMenu[Main Menu]
+    ExistingUser --> MainMenu
+    
+    MainMenu --> Schedule[📅 Расписание]
+    MainMenu --> Profile[👤 Профиль]
+    MainMenu --> Lessons[🎯 Обучение]
+    MainMenu --> Tournament[⚔ Записаться<br/>на турнир]
+    MainMenu --> Subscription[🌟 Подписка]
+    MainMenu --> Camp[🏕 Лагерь]
+    
+    Schedule --> MainMenu
+    Profile --> MainMenu
+    Lessons --> MainMenu
+    Tournament --> MainMenu
+    Subscription --> MainMenu
+    Camp --> MainMenu
+    
+    style Start fill:#4caf50,color:#fff
+    style MainMenu fill:#2196f3,color:#fff
+    style CheckUser fill:#ff9800,color:#fff
+            </div>
+        </div>
+
+        <h2>2. Profile Management Flow</h2>
+        <div class="diagram-container">
+            <div class="mermaid">
+flowchart TD
+    Profile[👤 Профиль] --> ShowProfile[Show Profile Info]
+    ShowProfile --> ChangeData[⚙ Поменять данные]
+    ChangeData --> SelectField[Select Field to Change]
+    
+    SelectField --> Nick[📝 Ник]
+    SelectField --> Age[📝 Возраст]
+    SelectField --> Name[📝 Имя]
+    SelectField --> Surname[📝 Фамилия]
+    SelectField --> Lichess[♞ lichess Rating]
+    SelectField --> Chesscom[♟️ chess.com Rating]
+    SelectField --> City[🏙️ Город]
+    
+    Nick --> Save[Save Changes]
+    Age --> Save
+    Name --> Save
+    Surname --> Save
+    Lichess --> Save
+    Chesscom --> Save
+    City --> Save
+    
+    Save --> ShowProfile
+    ShowProfile --> MainMenu[<< Назад to Main Menu]
+    
+    style Profile fill:#2196f3,color:#fff
+    style Save fill:#4caf50,color:#fff
+            </div>
+        </div>
+
+        <h2>3. Lessons Flow (Subscription Required)</h2>
+        <div class="diagram-container">
+            <div class="mermaid">
+flowchart TD
+    Lessons[🎯 Обучение] --> CheckSub{Has Active<br/>Subscription?}
+    CheckSub -->|No| SubRequired[🔒 Subscription Required]
+    CheckSub -->|Yes| LevelSelect[Select Level:<br/>Начинающий]
+    
+    SubRequired --> SubMenu[🌟 Оформить подписку]
+    SubRequired --> MainMenu[<< Назад]
+    
+    LevelSelect --> ShowVideos[List Available Videos]
+    ShowVideos --> SelectVideo[Select Video]
+    SelectVideo --> QualitySelect[Select Quality]
+    
+    QualitySelect --> Quality480[Среднее качество<br/>480p]
+    QualitySelect --> Quality1080[Высокое качество<br/>1080p]
+    
+    Quality480 --> SendVideo[Send Video to User]
+    Quality1080 --> SendVideo
+    
+    SendVideo --> AnotherLesson[📚 Выбрать другой урок]
+    SendVideo --> MainMenu2[🏠 Главное меню]
+    
+    AnotherLesson --> LevelSelect
+    ShowVideos --> LevelSelect
+    QualitySelect --> ShowVideos
+    
+    style Lessons fill:#2196f3,color:#fff
+    style CheckSub fill:#ff9800,color:#fff
+    style SubRequired fill:#f44336,color:#fff
+    style SendVideo fill:#4caf50,color:#fff
+            </div>
+        </div>
+
+        <h2>4. Tournament Registration Flow</h2>
+        <div class="diagram-container">
+            <div class="mermaid">
+flowchart TD
+    Tournament[⚔ Записаться на турнир] --> CheckReg{Registration<br/>Open?}
+    CheckReg -->|No| NoReg[No Open Registration]
+    CheckReg -->|Yes| SelectTour[Select Tournament]
+    
+    NoReg --> MainMenu[Return to Main Menu]
+    
+    SelectTour --> ChooseNick[Choose Nickname]
+    ChooseNick --> UsePerm[✅ Use Permanent Nickname]
+    ChooseNick --> EnterTemp[📝 Enter Temporary Nickname]
+    
+    UsePerm --> Validate{Validate<br/>Nickname}
+    EnterTemp --> CollectTemp[Collect Temporary Nickname]
+    CollectTemp --> Validate
+    
+    Validate -->|Taken| NickTaken[Nickname Already Used]
+    Validate -->|Valid| RegComplete[✅ Registration Complete]
+    
+    NickTaken --> ChooseNick
+    RegComplete --> MainMenu
+    
+    style Tournament fill:#2196f3,color:#fff
+    style CheckReg fill:#ff9800,color:#fff
+    style Validate fill:#ff9800,color:#fff
+    style RegComplete fill:#4caf50,color:#fff
+    style NickTaken fill:#f44336,color:#fff
+            </div>
+        </div>
+
+        <h2>5. Subscription Flow</h2>
+        <div class="diagram-container">
+            <div class="mermaid">
+flowchart TD
+    Subscription[🌟 Подписка] --> CheckActive{Has Active<br/>Subscription?}
+    CheckActive -->|Yes| ShowActive[Show Active Subscription Info]
+    CheckActive -->|No| ShowOptions[Show Subscription Options]
+    
+    ShowActive --> MainMenu[<< Назад]
+    
+    ShowOptions --> StartSub[Start Subscription]
+    StartSub --> CollectPhone[Collect Phone Number]
+    CollectPhone --> CreatePayment[Create Payment]
+    CreatePayment --> PaymentLink[Show Payment Link]
+    
+    PaymentLink --> PollPayment[Poll Payment Status]
+    PollPayment --> PaymentSuccess{Payment<br/>Status?}
+    
+    PaymentSuccess -->|Success| Activate[Activate Subscription]
+    PaymentSuccess -->|Timeout| Timeout[Payment Timeout]
+    PaymentSuccess -->|Cancelled| Cancelled[Payment Cancelled]
+    
+    Activate --> MainMenu2[Return to Main Menu]
+    Timeout --> MainMenu3[Return to Main Menu]
+    Cancelled --> MainMenu4[Return to Main Menu]
+    
+    ShowOptions --> MainMenu5[<< Назад]
+    
+    style Subscription fill:#2196f3,color:#fff
+    style CheckActive fill:#ff9800,color:#fff
+    style PaymentSuccess fill:#ff9800,color:#fff
+    style Activate fill:#4caf50,color:#fff
+            </div>
+        </div>
+
+        <h2>6. Admin Menu Flow</h2>
+        <div class="diagram-container">
+            <div class="mermaid">
+flowchart TD
+    AdminCmd[/admin Command] --> CheckAdmin{Is Admin?}
+    CheckAdmin -->|No| AccessDenied[Access Denied]
+    CheckAdmin -->|Yes| AdminMenu[Admin Menu]
+    
+    AccessDenied --> MainMenu[Return to Main Menu]
+    
+    AdminMenu --> TourMgmt[Tournament Management]
+    AdminMenu --> UserMgmt[User Management]
+    AdminMenu --> TimetableMgmt[Timetable Management]
+    AdminMenu --> CampMgmt[Camp Management]
+    AdminMenu --> CityMgmt[City Management]
+    AdminMenu --> VideoMgmt[🎥 Управление видео]
+    AdminMenu --> AdminMgmt[Admin Management]
+    
+    TourMgmt --> AdminMenu
+    UserMgmt --> AdminMenu
+    TimetableMgmt --> AdminMenu
+    CampMgmt --> AdminMenu
+    CityMgmt --> AdminMenu
+    VideoMgmt --> AdminMenu
+    AdminMgmt --> AdminMenu
+    
+    style AdminCmd fill:#9c27b0,color:#fff
+    style CheckAdmin fill:#ff9800,color:#fff
+    style AccessDenied fill:#f44336,color:#fff
+    style AdminMenu fill:#ff9800,color:#fff
+            </div>
+        </div>
+
+        <h2>7. Video Management Flow (Admin)</h2>
+        <div class="diagram-container">
+            <div class="mermaid">
+flowchart TD
+    VideoMgmt[🎥 Управление видео] --> VideoActions[Video Actions]
+    
+    VideoActions --> Upload[Загрузить видео]
+    VideoActions --> Show[Показать видео]
+    VideoActions --> Delete[Удалить видео]
+    VideoActions --> Categories[Управление категориями]
+    
+    Upload --> CollectTitle[Collect Title]
+    CollectTitle --> CollectDesc[Collect Description]
+    CollectDesc --> CollectCat[Collect Category]
+    CollectCat --> CollectLesson[Collect Lesson Number]
+    CollectLesson --> Process[Start Processing]
+    
+    Process --> Convert480[Convert to 480p]
+    Process --> Convert1080[Convert to 1080p]
+    Convert480 --> Complete[✅ Video Complete]
+    Convert1080 --> Complete
+    
+    Complete --> AdminMenu[Return to Admin Menu]
+    Show --> AdminMenu
+    Delete --> AdminMenu
+    Categories --> AdminMenu
+    
+    style VideoMgmt fill:#ff9800,color:#fff
+    style Process fill:#2196f3,color:#fff
+    style Complete fill:#4caf50,color:#fff
+            </div>
+        </div>
+
+        <h2>8. Schedule Flow</h2>
+        <div class="diagram-container">
+            <div class="mermaid">
+flowchart TD
+    Schedule[📅 Расписание] --> ShowTimetable[Show Timetable]
+    ShowTimetable --> ForwardPost[Forward Post from Channel]
+    ForwardPost --> ParsePost[Parse Post]
+    ParsePost --> Valid{Valid<br/>Format?}
+    
+    Valid -->|Yes| ShowInfo[Show Tournament Info]
+    Valid -->|No| Error[Error: Invalid Format]
+    
+    ShowInfo --> MainMenu[<< Назад]
+    Error --> MainMenu
+    
+    style Schedule fill:#2196f3,color:#fff
+    style Valid fill:#ff9800,color:#fff
+    style Error fill:#f44336,color:#fff
+            </div>
+        </div>
+
+        <h2>9. Camp Flow</h2>
+        <div class="diagram-container">
+            <div class="mermaid">
+flowchart TD
+    Camp[🏕 Лагерь] --> CheckActive{Camp<br/>Active?}
+    CheckActive -->|Yes| ShowPost[Show Camp Post]
+    CheckActive -->|No| NoActive[No Active Camp]
+    
+    ShowPost --> MainMenu[Return to Main Menu]
+    NoActive --> MainMenu
+    
+    style Camp fill:#2196f3,color:#fff
+    style CheckActive fill:#ff9800,color:#fff
+            </div>
+        </div>
+
+        <div class="note">
+            <strong>Note:</strong> This diagram shows the complete user experience flow for the REP Chess Bot. 
+            All flows eventually return to the Main Menu, providing a consistent navigation experience.
+            Admin features require the /admin command and admin privileges.
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+</body>
+</html>
+

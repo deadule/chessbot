@@ -54,8 +54,11 @@ BACK_TO_MENU_KEYBOARD = InlineKeyboardMarkup([
     [InlineKeyboardButton("<< Назад", callback_data="go_main_menu")]
 ])
 
+# Global storage for tasks to avoid pickle issues
+_subscription_tasks = {}
+
 def _ensure_task_storage(application) -> dict:
-    return application.bot_data.setdefault(SUBSCRIPTION_TASKS_KEY, {})
+    return _subscription_tasks
 
 def _now_tz(tz: ZoneInfo = MOSCOW_TZ) -> dt.datetime:
     return dt.datetime.now(tz)
