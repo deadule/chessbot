@@ -1,0 +1,33 @@
+services:
+  bot:
+    image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/bot:latest
+    build:
+      context: .
+      dockerfile: bot.Dockerfile
+    env_file:
+      - .env
+    environment:
+      - REPCHESS_DB_PATH=/data/database.db
+      - REPCHESS_LOG_DIR=/data
+      - TELEGRAM_API_BASE=http://telegram-bot-api:8081
+    volumes:
+      - ~/chessbot/bot:/data:rw
+    deploy:
+      update_config:
+        order: stop-first
+        failure_action: rollback
+
+  telegram-bot-api:
+    image: evilfreelancer/docker-telegram-bot-api:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      TELEGRAM_LOCAL: "true"
+      TELEGRAM_HTTP_PORT: 8081
+      TELEGRAM_HTTP_STAT_PORT: 8082
+    volumes:
+      - ~/chessbot/telegram-bot-api:/var/lib/telegram-bot-api
+    ports:
+      - "8081:8081"
+      - "8082:8082"

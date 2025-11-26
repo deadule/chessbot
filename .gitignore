@@ -4,3 +4,4 @@ __pycache__
 .env
 *.DS_Store
 .bot_data_cache
+telegram-bot-api/

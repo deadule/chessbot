@@ -19,10 +19,8 @@ from telegram.ext import (
     PicklePersistence,
 )
 
-
 # Add to python path some directories
 sys.path.insert(0, os.path.abspath("src"))
-
 
 from start import start_handlers
 from databaseAPI import rep_chess_db
@@ -126,6 +124,7 @@ async def global_file_message_handler(update: Update, context: ContextTypes.DEFA
 
     await context.user_data["file_state"](update, context)
 
+api_base = os.getenv("TELEGRAM_API_BASE", "https://api.telegram.org")
 
 def start_tg_bot(token: str, use_webhook: bool = False, webhook_url: str = None, webhook_port: int = 8443):
     # Use persistence for both modes, but handle pickle issues
@@ -135,6 +134,10 @@ def start_tg_bot(token: str, use_webhook: bool = False, webhook_url: str = None,
         .token(token)
         .persistence(persistence=prs)
         .post_init(initialize_auto_renew_tasks)
+        # tell PTB to talk to local server instead of cloud
+        .base_url(f"{api_base}/bot")
+        .base_file_url(f"{api_base}/file/bot")
+        .local_mode(True)  # because your local server runs with --local
         .build()
     )
 
@@ -149,23 +152,7 @@ def start_tg_bot(token: str, use_webhook: bool = False, webhook_url: str = None,
     application.add_handler(MessageHandler(filters.Document.ALL, global_file_message_handler))
     application.add_handler(MessageHandler(filters.FORWARDED, global_forwarded_message_handler))
     application.add_handler(MessageHandler(filters.ALL, global_message_handler))
-
-    # Temporarily disabled webhook functionality - using polling only
-    # if use_webhook and webhook_url:
-    #     # Use webhook for large file support
-    #     logger.info(f"Starting bot with webhook: {webhook_url}")
-    #     application.run_webhook(
-    #         listen="0.0.0.0",
-    #         port=webhook_port,
-    #         webhook_url=webhook_url,
-    #         secret_token=None  # Add secret token for security if needed
-    #     )
-    # else:
-    #     # Use polling (current method)
-    #     logger.info("Starting bot with polling")
-    #     application.run_polling()
     
-    # Use polling (current method) - webhook disabled for now
     logger.info("Starting bot with polling")
     application.run_polling()
 
@@ -173,32 +160,14 @@ def start_tg_bot(token: str, use_webhook: bool = False, webhook_url: str = None,
 
 
 def main():
-    # Init database
     rep_chess_db.initialize()
 
-    # Get telegram token
     telegram_token = os.getenv("REPCHESS_TELEGRAM_BOT_TOKEN")
     if not telegram_token:
         logger.error("Can't find path to telegram token!")
         print("Please set REPCHESS_TELEGRAM_BOT_TOKEN variable.")
         sys.exit(1)
-
-    # Temporarily disabled webhook configuration - using polling only
-    # Check for webhook configuration
-    # use_webhook = os.getenv("REPCHESS_USE_WEBHOOK", "false").lower() == "true"
-    # webhook_url = os.getenv("REPCHESS_WEBHOOK_URL")
-    # webhook_port = int(os.getenv("REPCHESS_WEBHOOK_PORT", "8443"))
-
-    # Start bot
     try:
-        # if use_webhook and webhook_url:
-        #     logger.info("Starting bot with webhook mode for large file support")
-        #     start_tg_bot(telegram_token, use_webhook=True, webhook_url=webhook_url, webhook_port=webhook_port)
-        # else:
-        #     logger.info("Starting bot with polling mode")
-        #     start_tg_bot(telegram_token, use_webhook=False)
-        
-        # Use polling mode only for now
         logger.info("Starting bot with polling mode")
         start_tg_bot(telegram_token, use_webhook=False)
     except Exception as e:
