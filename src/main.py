@@ -18,6 +18,7 @@ from telegram.ext import (
     filters,
     PicklePersistence,
 )
+from telegram.request import HTTPXRequest
 
 # Add to python path some directories
 sys.path.insert(0, os.path.abspath("src"))
@@ -124,20 +125,27 @@ async def global_file_message_handler(update: Update, context: ContextTypes.DEFA
 
     await context.user_data["file_state"](update, context)
 
-api_base = os.getenv("TELEGRAM_API_BASE", "https://api.telegram.org")
+api_base = os.getenv("TELEGRAM_API_BASE", "http://telegram-bot-api:8081/bot")
 
 def start_tg_bot(token: str, use_webhook: bool = False, webhook_url: str = None, webhook_port: int = 8443):
-    # Use persistence for both modes, but handle pickle issues
     prs = PicklePersistence(filepath=".bot_data_cache")
+    
+    request = HTTPXRequest(
+        connection_pool_size=8,
+        read_timeout=600,
+        write_timeout=600,
+        connect_timeout=30,
+    )
+    
     application = (
         ApplicationBuilder()
         .token(token)
         .persistence(persistence=prs)
         .post_init(initialize_auto_renew_tasks)
-        # tell PTB to talk to local server instead of cloud
         .base_url(f"{api_base}/bot")
         .base_file_url(f"{api_base}/file/bot")
-        .local_mode(True)  # because your local server runs with --local
+        .local_mode(True)
+        .request(request)
         .build()
     )
 

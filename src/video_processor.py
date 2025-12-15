@@ -4,18 +4,25 @@ import subprocess
 import logging
 import time
 import asyncio
+import shutil
 from typing import Tuple, Optional, Callable
 from telegram import Bot
 from telegram.error import TelegramError
 
 logger = logging.getLogger(__name__)
 
+VIDEO_DOWNLOAD_TIMEOUT = 300
+
+VIDEO_STORAGE_DIR = os.getenv("VIDEO_STORAGE_DIR", os.path.join(os.path.dirname(os.path.dirname(__file__)), "video_storage"))
+
 class VideoProcessor:
     """Handles video processing and conversion using FFmpeg"""
     
-    def __init__(self, bot: Bot, temp_dir: str = None, progress_callback: Callable = None):
+    def __init__(self, bot: Bot, video_storage_dir: str = None, progress_callback: Callable = None):
         self.bot = bot
-        self.temp_dir = temp_dir or tempfile.gettempdir()
+        self.video_storage_dir = video_storage_dir or VIDEO_STORAGE_DIR
+        os.makedirs(self.video_storage_dir, exist_ok=True)
+        logger.info(f"Video storage directory: {self.video_storage_dir}")
         self.progress_callback = progress_callback
         
     async def process_video(self, file_id: str, video_id: int, title: str, chat_id: str) -> Tuple[Optional[str], Optional[str]]:
@@ -27,50 +34,53 @@ class VideoProcessor:
         logger.info(f"🎬 Starting video processing for video {video_id}: '{title}'")
         
         try:
-            # Create temporary directory for this video
-            video_temp_dir = os.path.join(self.temp_dir, f"video_{video_id}")
-            os.makedirs(video_temp_dir, exist_ok=True)
+            video_dir = os.path.join(self.video_storage_dir, f"video_{video_id}")
+            os.makedirs(video_dir, exist_ok=True)
             
-            # Step 1: Download original video
             await self._update_progress(0, "📥 Downloading original video...")
             logger.info(f"📥 Downloading video {video_id} from Telegram...")
-            original_path = await self._download_video(file_id, video_temp_dir)
+            original_path = await self._download_video(file_id, video_dir)
             if not original_path:
-                error_msg = f"❌ Failed to download video {file_id}"
-                logger.error(error_msg)
+                error_msg = (
+                    f"❌ **Ошибка загрузки видео**\n\n"
+                    f"Не удалось загрузить видео с серверов Telegram.\n\n"
+                    f"Возможные причины:\n"
+                    f"• Видео слишком большое\n"
+                    f"• Проблемы с соединением\n"
+                    f"• Превышено время ожидания ({VIDEO_DOWNLOAD_TIMEOUT}s)\n\n"
+                    f"Попробуйте загрузить видео позже или используйте видео меньшего размера."
+                )
+                logger.error(f"Video download failed for video {video_id} (file_id: {file_id})")
                 await self._update_progress(0, error_msg)
                 return None, None
             
             download_time = time.time() - start_time
             logger.info(f"✅ Video downloaded in {download_time:.1f}s")
             
-            # Step 2: Convert to 480p
             await self._update_progress(20, "🔄 Converting to 480p...")
             logger.info(f"🔄 Converting video {video_id} to 480p...")
-            file_480p = await self._convert_video(original_path, video_temp_dir, "480p", video_id)
+            file_480p = await self._convert_video(original_path, video_dir, "480p", video_id)
             if not file_480p:
-                error_msg = f"❌ Failed to convert video {video_id} to 480p"
+                error_msg = f"❌ Failed to convert video to 480p"
                 logger.error(error_msg)
                 await self._update_progress(20, error_msg)
                 return None, None
             
             convert_480p_time = time.time() - start_time - download_time
             logger.info(f"✅ 480p conversion completed in {convert_480p_time:.1f}s")
-            
-            # Step 3: Convert to 1080p
+
             await self._update_progress(60, "🔄 Converting to 1080p...")
             logger.info(f"🔄 Converting video {video_id} to 1080p...")
-            file_1080p = await self._convert_video(original_path, video_temp_dir, "1080p", video_id)
+            file_1080p = await self._convert_video(original_path, video_dir, "1080p", video_id)
             if not file_1080p:
-                error_msg = f"❌ Failed to convert video {video_id} to 1080p"
+                error_msg = f"❌ Failed to convert video to 1080p"
                 logger.error(error_msg)
                 await self._update_progress(60, error_msg)
                 return None, None
             
             convert_1080p_time = time.time() - start_time - download_time - convert_480p_time
             logger.info(f"✅ 1080p conversion completed in {convert_1080p_time:.1f}s")
-            
-            # Step 4: Upload both versions to Telegram
+
             await self._update_progress(80, "📤 Uploading 480p to Telegram...")
             logger.info(f"📤 Uploading 480p version of video {video_id}...")
             file_id_480p = await self._upload_video(file_480p, title, "480p", chat_id)
@@ -79,18 +89,17 @@ class VideoProcessor:
             logger.info(f"📤 Uploading 1080p version of video {video_id}...")
             file_id_1080p = await self._upload_video(file_1080p, title, "1080p", chat_id)
             
-            # Step 5: Cleanup
-            await self._update_progress(95, "🧹 Cleaning up temporary files...")
-            self._cleanup_temp_files(video_temp_dir)
+            await self._update_progress(95, "✅ Processing completed!")
             
             total_time = time.time() - start_time
             logger.info(f"🎉 Video {video_id} processing completed successfully in {total_time:.1f}s total")
+            logger.info(f"Video files saved to: {video_dir}")
             await self._update_progress(100, f"✅ Processing completed in {total_time:.1f}s!")
             
             return file_id_480p, file_id_1080p
             
         except Exception as e:
-            error_msg = f"❌ Error processing video {video_id}: {str(e)}"
+            error_msg = f"❌ Error processing video"
             logger.error(error_msg, exc_info=True)
             await self._update_progress(0, error_msg)
             return None, None
@@ -110,13 +119,56 @@ class VideoProcessor:
     
     async def _download_video(self, file_id: str, temp_dir: str) -> Optional[str]:
         """Download video from Telegram"""
+        logger.info(f"Starting download for file_id: {file_id}, temp_dir: {temp_dir}")
         try:
+            logger.info(f"Calling bot.get_file({file_id})...")
             file = await self.bot.get_file(file_id)
+            logger.info(f"Got file object: size={file.file_size if file.file_size else 'unknown'}")
             file_path = os.path.join(temp_dir, f"original_{file_id}.mp4")
-            await file.download_to_drive(file_path)
-            return file_path
+
+            file_size_mb = file.file_size / (1024 * 1024) if file.file_size else None
+            if file_size_mb:
+                logger.info(f"Downloading video {file_id} (size: {file_size_mb:.2f} MB, timeout: {VIDEO_DOWNLOAD_TIMEOUT}s)")
+            
+            logger.info(f"File object: {file}")
+            logger.info(f"File path: {file.file_path}")
+            
+            await file.download_to_drive(file_path, write_timeout=VIDEO_DOWNLOAD_TIMEOUT)
+            
+            if os.path.exists(file_path):
+                downloaded_size = os.path.getsize(file_path) / (1024 * 1024)
+                logger.info(f"Successfully downloaded video {file_id} ({downloaded_size:.2f} MB)")
+                return file_path
+            else:
+                logger.error(f"Download completed but file not found at {file_path}")
+                return None
+
         except TelegramError as e:
-            logger.error(f"Failed to download video {file_id}: {e}")
+            error_type = type(e).__name__
+            error_msg = str(e)
+            
+            if "Timed out" in error_msg or "timeout" in error_msg.lower():
+                logger.error(
+                    f"Timeout error downloading video {file_id}: {error_msg} "
+                    f"(timeout setting: {VIDEO_DOWNLOAD_TIMEOUT}s). "
+                    f"The video may be too large or the connection is slow."
+                )
+            elif "Network" in error_type or "Connection" in error_msg:
+                logger.error(
+                    f"Network error downloading video {file_id}: {error_msg}. "
+                    f"Please check your connection and try again."
+                )
+            else:
+                logger.error(
+                    f"Failed to download video {file_id}: {error_type} - {error_msg}"
+                )
+            return None
+        except Exception as e:
+            error_type = type(e).__name__
+            logger.error(
+                f"Unexpected error downloading video {file_id}: {error_type} - {str(e)}",
+                exc_info=True
+            )
             return None
     
     async def _convert_video(self, input_path: str, temp_dir: str, quality: str, video_id: int) -> Optional[str]:
@@ -124,13 +176,11 @@ class VideoProcessor:
         try:
             output_path = os.path.join(temp_dir, f"{quality}_{video_id}.mp4")
             
-            # Get video duration for progress calculation
             duration = await self._get_video_duration(input_path)
             if duration <= 0:
                 logger.warning(f"Could not determine video duration for {quality} conversion")
-                duration = 60  # Default fallback
-            
-            # FFmpeg command based on quality
+                duration = 60
+
             if quality == "480p":
                 cmd = [
                     "ffmpeg", "-i", input_path,
@@ -140,8 +190,8 @@ class VideoProcessor:
                     "-preset", "medium",
                     "-c:a", "aac",
                     "-b:a", "128k",
-                    "-progress", "pipe:1",  # Output progress to stdout
-                    "-y",  # Overwrite output file
+                    "-progress", "pipe:1",
+                    "-y", 
                     output_path
                 ]
             elif quality == "1080p":
@@ -153,41 +203,36 @@ class VideoProcessor:
                     "-preset", "medium",
                     "-c:a", "aac",
                     "-b:a", "192k",
-                    "-progress", "pipe:1",  # Output progress to stdout
-                    "-y",  # Overwrite output file
+                    "-progress", "pipe:1",
+                    "-y",
                     output_path
                 ]
             else:
                 logger.error(f"Unsupported quality: {quality}")
                 return None
             
-            # Run FFmpeg with progress tracking
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
             )
             
-            # Track progress
             progress_start = 20 if quality == "480p" else 60
             last_progress = 0
             
             while True:
                 try:
-                    # Read progress line
                     line = await asyncio.wait_for(process.stdout.readline(), timeout=1.0)
                     if not line:
                         break
                     
                     line_str = line.decode().strip()
                     if "out_time_ms=" in line_str:
-                        # Extract current time
                         try:
                             time_str = line_str.split("out_time_ms=")[1].split()[0]
                             current_time = int(time_str) / 1000000  # Convert to seconds
                             progress = min(int((current_time / duration) * 100), 100)
                             
-                            # Update progress every 5%
                             if progress - last_progress >= 5:
                                 progress_bar = self._create_progress_bar(progress)
                                 await self._update_progress(
@@ -199,12 +244,10 @@ class VideoProcessor:
                             pass
                             
                 except asyncio.TimeoutError:
-                    # Check if process is still running
                     if process.returncode is not None:
                         break
                     continue
             
-            # Wait for process to complete
             await process.wait()
             
             if process.returncode != 0:
@@ -254,7 +297,7 @@ class VideoProcessor:
         try:
             with open(file_path, 'rb') as video_file:
                 message = await self.bot.send_video(
-                    chat_id=chat_id,  # Upload to the same chat where admin uploaded
+                    chat_id=chat_id, 
                     video=video_file,
                     caption=f"{title} ({quality})",
                     supports_streaming=True
@@ -264,13 +307,37 @@ class VideoProcessor:
             logger.error(f"Failed to upload {quality} video: {e}")
             return None
     
-    def _cleanup_temp_files(self, temp_dir: str):
-        """Clean up temporary files"""
+    def delete_video_files(self, video_id: int) -> bool:
+        """Delete video files from storage for a given video_id"""
         try:
-            import shutil
-            shutil.rmtree(temp_dir, ignore_errors=True)
+            video_dir = os.path.join(self.video_storage_dir, f"video_{video_id}")
+            if os.path.exists(video_dir):
+                shutil.rmtree(video_dir, ignore_errors=True)
+                logger.info(f"Deleted video files for video_id {video_id} from {video_dir}")
+                return True
+            else:
+                logger.debug(f"Video directory not found for video_id {video_id}: {video_dir}")
+                return False
         except Exception as e:
-            logger.warning(f"Failed to cleanup temp files: {e}")
+            logger.error(f"Error deleting video files for video_id {video_id}: {e}", exc_info=True)
+            return False
+    
+    @staticmethod
+    def delete_video_files_static(video_id: int, video_storage_dir: str = None) -> bool:
+        """Static method to delete video files without instantiating VideoProcessor"""
+        try:
+            storage_dir = video_storage_dir or VIDEO_STORAGE_DIR
+            video_dir = os.path.join(storage_dir, f"video_{video_id}")
+            if os.path.exists(video_dir):
+                shutil.rmtree(video_dir, ignore_errors=True)
+                logger.info(f"Deleted video files for video_id {video_id} from {video_dir}")
+                return True
+            else:
+                logger.debug(f"Video directory not found for video_id {video_id}: {video_dir}")
+                return False
+        except Exception as e:
+            logger.error(f"Error deleting video files for video_id {video_id}: {e}", exc_info=True)
+            return False
     
     def check_ffmpeg_available(self) -> bool:
         """Check if FFmpeg is available on the system"""
@@ -293,8 +360,7 @@ class VideoProcessor:
             
             import json
             data = json.loads(result.stdout)
-            
-            # Find video stream
+
             video_stream = None
             for stream in data.get("streams", []):
                 if stream.get("codec_type") == "video":
@@ -309,7 +375,6 @@ class VideoProcessor:
                 width = int(video_stream.get("width", 0))
                 height = int(video_stream.get("height", 0))
             
-            # Get duration from format
             format_info = data.get("format", {})
             duration_str = format_info.get("duration", "0")
             try:

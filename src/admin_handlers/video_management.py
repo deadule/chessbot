@@ -282,21 +282,36 @@ async def admin_collect_video_lesson_number(update: Update, context: ContextType
 async def admin_save_video_and_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Save video to database and start processing"""
     try:
-        # Save video to database with pending status
         metadata = context.user_data["video_metadata"]
+        category = metadata["category"]
+        lesson_number = metadata["lesson_number"]
+    
+        deleted_count = rep_chess_db.delete_videos_by_category_and_lesson(
+            category=category,
+            lesson_number=lesson_number,
+            statuses=['pending', 'failed']
+        )
+        
+        if deleted_count > 0:
+            logger.info(
+                f"Cleaned up {deleted_count} existing video(s) with category={category}, "
+                f"lesson_number={lesson_number} before adding new video"
+            )
+        
+        # Save video to database with pending status
         rep_chess_db.add_video(
             file_id_480p=None,
             file_id_1080p=None,
             title=metadata["title"],
             description=metadata["description"],
-            category=metadata["category"],
-            lesson_number=metadata["lesson_number"],
+            category=category,
+            lesson_number=lesson_number,
             original_file_id=metadata["original_file_id"],
             processing_status="pending"
         )
         
         # Get the video ID that was just created
-        videos = rep_chess_db.get_videos_by_category(metadata["category"])
+        videos = rep_chess_db.get_videos_by_category(category)
         if not videos:
             await update.message.reply_text("❌ Ошибка: не удалось найти созданное видео.")
             return
@@ -307,12 +322,13 @@ async def admin_save_video_and_process(update: Update, context: ContextTypes.DEF
         context.user_data["text_state"] = None
         
         # Show initial processing message
+        cleanup_msg = f"\n\n(Удалено {deleted_count} старых видео с этим номером урока)" if deleted_count > 0 else ""
         initial_message = await update.message.reply_text(
             f"""🎬 **Начинаю обработку видео...**
 
 📝 **{metadata['title']}**
 
-Видео будет автоматически конвертировано в 480p и 1080p. Это может занять несколько минут.""",
+Видео будет автоматически конвертировано в 480p и 1080p. Это может занять несколько минут.{cleanup_msg}""",
             reply_markup=video_management_keyboard,
             parse_mode="Markdown"
         )

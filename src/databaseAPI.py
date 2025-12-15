@@ -578,10 +578,15 @@ class RepChessDB:
     def is_admin(self, telegram_id: int) -> bool:
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT is_admin FROM user WHERE user.telegram_id == ?""", (telegram_id,)
+                "SELECT is_admin FROM user WHERE telegram_id = ?", (telegram_id,)
             )
-        result = cursor.fetchone()
-        return bool(result[0])
+            row = cursor.fetchone()
+
+        if row is None:
+            return False
+
+        return bool(row[0])
+
 
     def set_user_as_admin(self, public_id: int) -> str | None:
         """
@@ -718,6 +723,7 @@ class RepChessDB:
         return dict(result) if result else None
     
     def delete_video(self, video_id: int) -> bool:
+        """Delete video from database"""
         with self.conn:
             cursor = self.conn.execute(
                 """DELETE FROM videos WHERE id = ?""",
@@ -727,6 +733,11 @@ class RepChessDB:
             logger.warning(f"Attempted to delete non-existent video {video_id=}")
             return False
         logger.debug(f"delete video {video_id=}")
+        
+        # Delete video files from storage
+        from video_processor import VideoProcessor
+        VideoProcessor.delete_video_files_static(video_id)
+        
         return True
     
     def update_video_metadata(self, video_id: int, title: str, description: str) -> bool:
@@ -828,6 +839,48 @@ class RepChessDB:
             )
         result = cursor.fetchone()
         return result[0] if result and result[0] != "placeholder" else None
+
+    def get_video_by_category_and_lesson(self, category: str, lesson_number: int) -> dict | None:
+        """Get video by category and lesson number"""
+        with self.conn:
+            cursor = self.conn.execute(
+                """SELECT * FROM videos WHERE category = ? AND lesson_number = ?""",
+                (category, lesson_number)
+            )
+        result = cursor.fetchone()
+        return dict(result) if result else None
+    
+    def delete_videos_by_category_and_lesson(self, category: str, lesson_number: int, statuses: list[str] = None) -> int:
+        """Delete videos by category and lesson number, optionally filtered by status"""
+        if statuses is None:
+            statuses = ['pending', 'failed']
+        
+        # First get the video IDs that will be deleted
+        placeholders = ','.join(['?'] * len(statuses))
+        with self.conn:
+            cursor = self.conn.execute(
+                f"""SELECT id FROM videos WHERE category = ? AND lesson_number = ? AND processing_status IN ({placeholders})""",
+                (category, lesson_number, *statuses)
+            )
+            video_ids = [row[0] for row in cursor.fetchall()]
+        
+        if video_ids:
+            placeholders = ','.join(['?'] * len(statuses))
+            with self.conn:
+                cursor = self.conn.execute(
+                    f"""DELETE FROM videos WHERE category = ? AND lesson_number = ? AND processing_status IN ({placeholders})""",
+                    (category, lesson_number, *statuses)
+                )
+            deleted_count = cursor.rowcount
+            
+            from video_processor import VideoProcessor
+            for video_id in video_ids:
+                VideoProcessor.delete_video_files_static(video_id)
+            
+            if deleted_count > 0:
+                logger.info(f"Deleted {deleted_count} video(s) with category={category}, lesson_number={lesson_number}, statuses={statuses}")
+            return deleted_count
+        return 0
 
     # TOURNAMENT =========================================================
 

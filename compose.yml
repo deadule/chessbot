@@ -25,22 +25,21 @@ services:
         order: stop-first
         failure_action: rollback
 
-  telegram-bot-api:
-    image: evilfreelancer/docker-telegram-bot-api:latest
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      TELEGRAM_LOCAL: "true"
-
-      # activate later for statistics
-      TELEGRAM_STAT: "false"
-
-    volumes:
-      - ./telegram-bot-api-data:/var/lib/telegram-bot-api
-
-    ports:
-      - "127.0.0.1:8081:8081"
+telegram-bot-api:
+  image: tdlight/telegram-bot-api:latest
+  restart: unless-stopped
+  command:
+    - --local
+    - --api-id=${TELEGRAM_API_ID}
+    - --api-hash=${TELEGRAM_API_HASH}
+    - --files-dir=/var/lib/telegram-bot-api
+    - --dir=/var/lib/telegram-bot-api
+    - --max-webhook-connections=100
+    - --max-file-size=2147483648
+  volumes:
+    - ./telegram-bot-api-/var/lib/telegram-bot-api
+  ports:
+    - "127.0.0.1:8081:8081"
 
 #  caddy:
 #    image: caddy:2.8.4-alpine

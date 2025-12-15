@@ -26,10 +26,15 @@ logger = logging.getLogger(__name__)
 
 #  TODO: it doesn't wait for the платеж, подождать.... перейти на вебхуки? -  yes
 
+# пользователь id - идентификатор способа оплаты
+# Удаление идентификатора сохраненного способа оплаты равноценно отключению автоплатежа для пользователя.
+
 ACCOUNT_ID = os.getenv("ACCOUNT_ID")
 SECRET_KEY = os.getenv("SECRET_KEY")
+
 if not ACCOUNT_ID or not SECRET_KEY:
     logger.warning("YooKassa credentials missing: ACCOUNT_ID/SECRET_KEY")
+    
 Configuration.account_id = ACCOUNT_ID
 Configuration.secret_key = SECRET_KEY
 
@@ -152,12 +157,22 @@ def create_subscription_payment_sync(telegram_id: int, phone: str) -> Tuple[Opti
     try:
         payment = Payment.create(
             {
-                "amount": {"value": _money_str(SUBSCRIPTION_AMOUNT), "currency": "RUB"},
-                "confirmation": {"type": "redirect", "return_url": RETURN_URL},
+                "amount": 
+                    {
+                        "value": _money_str(SUBSCRIPTION_AMOUNT),
+                        "currency": "RUB"
+                    },
+                "confirmation": 
+                    {
+                        "type": "redirect", 
+                        "return_url": RETURN_URL
+                    },
                 "save_payment_method": True,
                 "capture": True,
                 "description": f"Subscription payment for user {telegram_id}",
-                "metadata": {"telegram_id": telegram_id},
+                "metadata": {
+                    "telegram_id": telegram_id
+                    },
                 "receipt": _build_receipt(phone),
             },
             str(uuid.uuid4()),
@@ -175,11 +190,16 @@ def create_recurring_payment_sync(
     try:
         return Payment.create(
             {
-                "amount": {"value": _money_str(SUBSCRIPTION_AMOUNT), "currency": "RUB"},
+                "amount": {
+                    "value": _money_str(SUBSCRIPTION_AMOUNT), 
+                    "currency": "RUB"
+                    },
                 "capture": True,
                 "description": f"Recurring subscription for user {telegram_id}",
                 "payment_method_id": payment_method_id,
-                "metadata": {"telegram_id": telegram_id},
+                "metadata": {
+                    "telegram_id": telegram_id
+                    },
                 "receipt": _build_receipt(phone),
             },
             str(uuid.uuid4()),
@@ -566,7 +586,7 @@ async def subscribe_button_clicked(update: Update, context: ContextTypes.DEFAULT
                 text=(
                     "У вас уже активирована подписка! "
                     f"Она действует до {valid_until:%d.%m.%Y}\n\n"
-                    "У вас отключено автопродление. Следующий платеж не будет списан. "
+                    "У вас отключено автопродление. Следующий платеж не будет списан."
                     "Чтобы возобновить автопродление отправьте /resume_sub."
                     if valid_until
                     else "У вас уже активирована подписка! Автопродление отключено."
@@ -589,7 +609,7 @@ async def subscribe_button_clicked(update: Update, context: ContextTypes.DEFAULT
             text=(
                 "У вас ещё нет подписки!\n\n"
                 f"Оформить за {_money_str(SUBSCRIPTION_AMOUNT)} RUB в месяц? "
-                "Списание происходит ежемесячно. Чтобы отказаться от ежемесячного платежа после оформления, вы можете отправить команду /stop_sub."
+                "Списание происходит ежемесячно. Чтобы отказаться от ежемесячного платежа отправьте команду /stop_sub."
             ),
             reply_markup=keyboard,
         )
@@ -724,7 +744,7 @@ async def initialize_auto_renew_tasks(application) -> None:
     tasks = _ensure_task_storage(application)
     for record in records:
         telegram_id = record["telegram_id"]
-        chat_id = telegram_id  # assuming private chat
+        chat_id = telegram_id
         if telegram_id in tasks:
             continue
         tasks[telegram_id] = application.create_task(
