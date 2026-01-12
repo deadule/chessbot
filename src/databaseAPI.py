@@ -6,13 +6,52 @@ import os
 import sys
 from collections import deque
 
-logger = logging.getLogger(__name__)
-logfile_dir = os.getenv("REPCHESS_LOG_DIR")
-logger_handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
-logger_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s : %(levelname)s: %(message)s"))
-logger.addHandler(logger_handler)
-logger.setLevel(logging.DEBUG)
-logger.propagate = False
+def _setup_logger():
+    logfile_dir = os.getenv("REPCHESS_LOG_DIR")
+    if not logfile_dir:
+        data_dir = os.getenv("DATA_DIR", "/app/data")
+        logfile_dir = os.path.join(data_dir, "logs")
+
+    try:
+        os.makedirs(logfile_dir, exist_ok=True)
+    except Exception as e:
+        print(f"[CRITICAL] Failed to create log directory '{logfile_dir}': {e}", file=sys.stderr)
+        sys.exit(1)
+
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+
+    if not logger.handlers:
+        try:
+            handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
+        except Exception as e:
+            print(f"[CRITICAL] Cannot open log file in '{logfile_dir}': {e}", file=sys.stderr)
+            sys.exit(1)
+
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s %(name)s : %(levelname)s: %(message)s")
+        )
+        logger.addHandler(handler)
+
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+        console.setFormatter(
+            logging.Formatter("[DB] %(levelname)s: %(message)s")
+        )
+        logger.addHandler(console)
+
+    logger.propagate = False
+    return logger
+
+logger = _setup_logger()
+
+# logger = logging.getLogger(__name__)
+# logfile_dir = os.getenv("REPCHESS_LOG_DIR")
+# logger_handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
+# logger_handler.setFormatter(logging.Formatter("%(asctime)s %(name)s : %(levelname)s: %(message)s"))
+# logger.addHandler(logger_handler)
+# logger.setLevel(logging.DEBUG)
+# logger.propagate = False
 
 
 def converter_to_isoformat(date_time_b: bytes):
@@ -152,6 +191,7 @@ class RepChessDB:
                     category TEXT,
                     lesson_number INTEGER,
                     original_file_id TEXT,
+                    original_path TEXT,
                     processing_status TEXT DEFAULT 'pending'
                 );
 
@@ -641,11 +681,11 @@ class RepChessDB:
 
     # VIDEOS =========================================================
 
-    def add_video(self, file_id_480p: str = None, file_id_1080p: str = None, title: str = None, description: str = None, category: str = None, lesson_number: int = None, original_file_id: str = None, processing_status: str = "pending"):
+    def add_video(self, file_id_480p: str = None, file_id_1080p: str = None, title: str = None, description: str = None, category: str = None, lesson_number: int = None, original_file_id: str = None, original_path: str = None, processing_status: str = "pending"):
         with self.conn:
             self.conn.execute(
-                """INSERT INTO videos (file_id_480p, file_id_1080p, title, description, category, lesson_number, original_file_id, processing_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (file_id_480p, file_id_1080p, title, description, category, lesson_number, original_file_id, processing_status)
+                """INSERT INTO videos (file_id_480p, file_id_1080p, title, description, category, lesson_number, original_file_id, original_path, processing_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (file_id_480p, file_id_1080p, title, description, category, lesson_number, original_file_id, original_path, processing_status)
             )
         logger.debug(f"add video {file_id_480p=}, {file_id_1080p=}, {title=}, {category=}, {lesson_number=}, {processing_status=}")
     
@@ -670,7 +710,7 @@ class RepChessDB:
             return False
         
         values.append(video_id)
-        
+    
         with self.conn:
             self.conn.execute(
                 f"""UPDATE videos SET {', '.join(updates)} WHERE id = ?""",

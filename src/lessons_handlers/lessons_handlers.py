@@ -234,7 +234,6 @@ async def send_video_to_user(update: Update, context: ContextTypes.DEFAULT_TYPE)
             parse_mode="Markdown"
         )
         
-        # Show navigation back to lessons
         await query.edit_message_text(
             "✅ Видео отправлено!",
             reply_markup=InlineKeyboardMarkup([

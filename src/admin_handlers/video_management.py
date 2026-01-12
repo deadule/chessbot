@@ -6,6 +6,7 @@ from telegram.ext import ContextTypes, MessageHandler, filters, CallbackQueryHan
 from databaseAPI import rep_chess_db
 from .admin_main_menu import admin_main_menu
 from video_processor import VideoProcessor
+from .utils import _download_video_to_persistent
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,17 @@ async def admin_handle_video_upload(update: Update, context: ContextTypes.DEFAUL
         file_id = video.file_id
         file_size = video.file_size
         file_name = video.file_name or "unknown"
+
+        logger.info(f"📤 Admin upload received:")
+        logger.info(f"   file_id        = {file_id}")
+        logger.info(f"   bot.token[:8]  = {context.bot.token[:8]}...")
+        logger.info(f"   bot.base_url   = {getattr(context.bot, 'base_url', 'DEFAULT')}")
+        logger.info(f"   local_mode     = {getattr(context.bot, 'local_mode', False)}")
+
+        original_path = await _download_video_to_persistent(file_id, context.bot)
+        if not original_path:
+            await update.message.reply_text("❌ Не удалось сохранить видео. Попробуйте ещё раз.")
+            return
         
         # For video messages, get duration and dimensions
         if hasattr(video, 'duration'):
@@ -92,6 +104,7 @@ async def admin_handle_video_upload(update: Update, context: ContextTypes.DEFAUL
         
         # Store video info in context for metadata collection
         context.user_data["video_metadata"]["original_file_id"] = file_id
+        context.user_data["video_metadata"]["original_path"] = str(original_path)
         context.user_data["video_metadata"]["file_size"] = file_size_mb
         context.user_data["video_metadata"]["duration"] = duration
         context.user_data["video_metadata"]["resolution"] = f"{width}x{height}"
@@ -307,6 +320,7 @@ async def admin_save_video_and_process(update: Update, context: ContextTypes.DEF
             category=category,
             lesson_number=lesson_number,
             original_file_id=metadata["original_file_id"],
+            original_path=metadata["original_path"],
             processing_status="pending"
         )
         
@@ -370,7 +384,7 @@ async def process_video_background(bot, video_id: int, metadata: dict, chat_id: 
         processor = VideoProcessor(bot, progress_callback=progress_callback)
         
         # Check if FFmpeg is available
-        if not processor.check_ffmpeg_available():
+        if not processor._check_ffmpeg_available():
             # Delete video from database since FFmpeg is not available
             rep_chess_db.delete_video(video_id)
             
@@ -394,7 +408,7 @@ async def process_video_background(bot, video_id: int, metadata: dict, chat_id: 
         
         # Process video
         file_id_480p, file_id_1080p = await processor.process_video(
-            metadata["original_file_id"],
+            metadata["original_path"],
             video_id,
             metadata["title"],
             str(chat_id)
