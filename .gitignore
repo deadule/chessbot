@@ -6,3 +6,4 @@ __pycache__
 .bot_data_cache
 telegram-bot-api/
 build-context/
+telegram-bot-api-data/
