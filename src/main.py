@@ -17,6 +17,7 @@ from telegram.ext import (
     MessageHandler,
     filters,
     PicklePersistence,
+    Application,
 )
 from telegram.request import HTTPXRequest
 
@@ -31,7 +32,7 @@ from timetable_handlers import timetable_callback_handlers, process_new_post, pr
 from camp_handlers import camp_callback_handlers
 from lessons_handlers import lessons_callback_handlers
 from registration_handlers import registration_callback_handlers
-from payments import initialize_auto_renew_tasks, payment_callback_handlers
+from payments import payment_callback_handlers
 
 
 # Configure logging
@@ -125,6 +126,10 @@ async def global_file_message_handler(update: Update, context: ContextTypes.DEFA
 
     await context.user_data["file_state"](update, context)
 
+async def post_init(application: Application):
+    from payments import subscription_scheduler
+    application.create_task(subscription_scheduler(application))
+
 api_base = os.getenv("TELEGRAM_API_BASE", "http://telegram-bot-api:8081/bot")
 
 def start_tg_bot(token: str, use_webhook: bool = False, webhook_url: str = None, webhook_port: int = 8443):
@@ -141,7 +146,7 @@ def start_tg_bot(token: str, use_webhook: bool = False, webhook_url: str = None,
         ApplicationBuilder()
         .token(token)
         .persistence(persistence=prs)
-        .post_init(initialize_auto_renew_tasks)
+        .post_init(post_init)
         .base_url(f"{api_base}/bot")
         .base_file_url(f"{api_base}/file/bot")
         .local_mode(True)

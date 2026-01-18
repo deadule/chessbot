@@ -424,18 +424,28 @@ class RepChessDB:
 
         return dict(row) if row else None
 
-    def get_auto_renew_subscriptions(self) -> list[dict]:
+    def get_due_subscriptions(self) -> list[dict]:
+        now_utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
         with self.conn:
             cursor = self.conn.execute(
-                """SELECT telegram_id, subscription_valid_until, subscription_payment_method_id,
-                           subscription_next_charge
-                    FROM subscription
-                    WHERE active_subscription = 1 AND subscription_auto_renew = 1
-                          AND subscription_payment_method_id IS NOT NULL"""
+                """
+                SELECT 
+                    telegram_id,
+                    user_phone AS phone,
+                    subscription_payment_method_id
+                FROM subscription
+                WHERE 
+                    active_subscription = 1
+                    AND subscription_auto_renew = 1
+                    AND subscription_payment_method_id IS NOT NULL
+                    AND user_phone IS NOT NULL
+                    AND subscription_next_charge IS NOT NULL
+                    AND subscription_next_charge <= ?
+                """,
+                (now_utc,)
             )
-
-        return [dict(row) for row in cursor.fetchall()]
-
+            return [dict(row) for row in cursor.fetchall()]
+    
     def get_user_phone(self, telegram_id: int) -> str | None:
         with self.conn:
             cursor = self.conn.execute(

@@ -17,14 +17,12 @@ from telegram import (
     ReplyKeyboardRemove,
     Update,
 )
-from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters, Application
 from telegram.error import TelegramError
 from zoneinfo import ZoneInfo
 from start import go_main_menu
 
 logger = logging.getLogger(__name__)
-
-#  TODO: it doesn't wait for the платеж, подождать.... перейти на вебхуки? -  yes
 
 # пользователь id - идентификатор способа оплаты
 # Удаление идентификатора сохраненного способа оплаты равноценно отключению автоплатежа для пользователя.
@@ -59,11 +57,7 @@ BACK_TO_MENU_KEYBOARD = InlineKeyboardMarkup([
     [InlineKeyboardButton("<< Назад", callback_data="go_main_menu")]
 ])
 
-# Global storage for tasks to avoid pickle issues
-_subscription_tasks = {}
-
-def _ensure_task_storage(application) -> dict:
-    return _subscription_tasks
+# helpers 
 
 def _now_tz(tz: ZoneInfo = MOSCOW_TZ) -> dt.datetime:
     return dt.datetime.now(tz)
@@ -153,6 +147,8 @@ async def _reply_managed(
         _track_cleanup_message(context, message.message_id)
     return message
 
+# YOKASSA functionality 
+
 def create_subscription_payment_sync(telegram_id: int, phone: str) -> Tuple[Optional[str], Optional[str]]:
     try:
         payment = Payment.create(
@@ -213,6 +209,8 @@ def create_recurring_payment_sync(
         )
         return None
 
+# DB logic
+
 def add_auth(
     telegram_id: int,
     *,
@@ -255,7 +253,7 @@ async def _request_phone_number(
         chat_id=chat_id,
         text=(
             "Для оформления подписки нужен номер телефона, чтобы отправить фискальный чек "
-            "в YooMoney. Пожалуйста, отправьте контакт."
+            "в YooKassa. Пожалуйста, отправьте контакт."
         ),
         reply_markup=keyboard,
     )
@@ -292,12 +290,6 @@ async def process_phone_number(update: Update, context: ContextTypes.DEFAULT_TYP
     context.user_data.pop(PHONE_STATE_KEY, None)
     context.user_data.pop(PENDING_SUBSCRIPTION_DATA_KEY, None)
     context.user_data["text_state"] = None
-    
-    # debug
-    rep_chess_db.set_user_phone(pending["telegram_id"], phone)
-    just_saved = rep_chess_db.get_user_phone(pending["telegram_id"])
-    logger.debug("PHONE_SAVE: wrote=%r read_back=%r for user=%s",
-             phone, just_saved, pending["telegram_id"])
 
     await _reply_managed(update, context, text="Спасибо! Номер сохранён.", reply_markup=ReplyKeyboardRemove())
 
@@ -308,6 +300,8 @@ async def process_phone_number(update: Update, context: ContextTypes.DEFAULT_TYP
         telegram_id=pending["telegram_id"],
     )
 
+# payments
+
 async def initiate_subscription_payment(
     *,
     context: ContextTypes.DEFAULT_TYPE,
@@ -315,10 +309,6 @@ async def initiate_subscription_payment(
     chat_id: int,
     telegram_id: int,
 ) -> None:
-    # debug
-    dbg_phone = rep_chess_db.get_user_phone(telegram_id)
-    logger.debug("PHONE_CHECK_BEFORE_PAYMENT: user=%s phone_in_db=%r", telegram_id, dbg_phone)
-
     phone = rep_chess_db.get_user_phone(telegram_id)
     if not phone:
         await _send_managed_message(
@@ -358,7 +348,7 @@ async def initiate_subscription_payment(
         context,
         chat_id=chat_id,
         text=(
-            "Перейдите по ссылке ниже для оформления ежемесячной подписки на сайте ЮMoney.\n"
+            "Перейдите по ссылке ниже для оформления ежемесячной подписки на сайте ЮKКасса.\n"
             "Для тестовой среды используйте карту 5555 5555 5555 4477 (12/22, CVC 000)."
         ),
         reply_markup=keyboard,
@@ -439,7 +429,7 @@ async def finalize_successful_payment(
     chat_id: int,
     telegram_id: int,
     payment: Payment,
-    is_recurring: bool,
+    is_recurring: bool = False,
 ) -> None:
     entry = application.bot_data.get(PAYMENT_PROMPTS_KEY, {}).pop(telegram_id, None)
     if entry:
@@ -456,104 +446,145 @@ async def finalize_successful_payment(
         payment_method_id = getattr(payment_method, "id", None)
         auto_renew = bool(getattr(payment_method, "saved", False)) and bool(payment_method_id)
 
-    valid_until_utc = add_auth(
+    valid_until_moscow = add_auth(
         telegram_id,
         payment_method_id=payment_method_id,
         auto_renew=auto_renew,
     )
-    valid_until = valid_until_utc  # already returned in Moscow TZ
 
-    await application.bot.send_message(
-        chat_id=chat_id,
+    if is_recurring:
+        text = f"✅ Подписка успешно продлена!\nСледующий платёж: {valid_until_moscow:%d.%m.%Y}"
+    else:
         text=(
             "Ваша подписка активирована!\n\n"
             "Теперь вы имеете доступ к видеоурокам в разделе 🎯 Обучение!\n"
             "Спасибо за поддержку проекта!"
-        ),
+        )
+
+    await application.bot.send_message(
+        chat_id=chat_id,
+        text=text,
         reply_markup=BACK_TO_MENU_KEYBOARD
     )
 
-    if auto_renew and payment_method_id:
-        schedule_auto_renew(application, telegram_id, chat_id)
+# scheduler
 
-def schedule_auto_renew(application, telegram_id: int, chat_id: int) -> None:
-    tasks = _ensure_task_storage(application)
-    existing = tasks.get(telegram_id)
-    if existing and not existing.done():
-        existing.cancel()
-    tasks[telegram_id] = application.create_task(
-        auto_renew_worker(application=application, telegram_id=telegram_id, chat_id=chat_id)
-    )
+async def subscription_scheduler(application: Application):
+    """
+    Фоновая задача: каждый час проверяет БД на наличие подписок,
+    для которых пришло время автопродления.
+    """
+    logger.info("Subscription scheduler started")
+    while True:
+        try:
+            logger.debug("Checking for due subscriptions...")
+            due_subscriptions = rep_chess_db.get_due_subscriptions()
+            logger.debug("Found %d due subscriptions", len(due_subscriptions))
 
-def cancel_auto_renew_task(application, telegram_id: int) -> None:
-    tasks = _ensure_task_storage(application)
-    task = tasks.pop(telegram_id, None)
-    if task and not task.done():
-        task.cancel()
+            for record in due_subscriptions:
+                telegram_id = record["telegram_id"]
+                chat_id = telegram_id
+                phone = record["phone"]
+                payment_method_id = record["subscription_payment_method_id"]
 
-async def auto_renew_worker(
+                if not phone or not payment_method_id:
+                    logger.warning(
+                        "Skipping renewal for user %s: missing phone or payment method",
+                        telegram_id
+                    )
+                    continue
+
+                application.create_task(
+                    process_single_renewal(
+                        application=application,
+                        telegram_id=telegram_id,
+                        chat_id=chat_id,
+                    )
+                )
+
+        except Exception as e:
+            logger.error("Error in subscription scheduler: %s", e, exc_info=True)
+
+        # ждём час
+        await asyncio.sleep(3600)
+
+
+async def process_single_renewal(
     *,
-    application,
+    application: Application,
     telegram_id: int,
     chat_id: int,
 ) -> None:
+    """Выполняет один автоплатёж для пользователя."""
     try:
-        while True:
-            details = rep_chess_db.get_subscription_details(telegram_id)
-            if not details or not details.get("subscription_auto_renew"):
-                return
+        logger.info("Starting renewal process for user %s", telegram_id)
 
-            next_charge = details.get("subscription_next_charge")
-            payment_method_id = details.get("subscription_payment_method_id")
-            phone = details.get("phone")
+        details = rep_chess_db.get_subscription_details(telegram_id)
+        if not details:
+            logger.warning("No subscription details found for user %s", telegram_id)
+            return
 
-            if not next_charge or not payment_method_id:
-                return
+        if not details.get("subscription_auto_renew"):
+            logger.info("Auto-renew disabled for user %s, skipping", telegram_id)
+            return
 
-            nc = _coerce_datetime(next_charge, tz=UTC)
-            if not nc:
-                logger.error("Invalid next_charge format for user %s: %s", telegram_id, next_charge)
-                return
+        payment_method_id = details.get("subscription_payment_method_id")
+        phone = details.get("user_phone") 
 
-            wait_seconds = max(0, (nc - _now_tz(UTC)).total_seconds())
-            if wait_seconds > 0:
-                await asyncio.sleep(wait_seconds)
+        if not payment_method_id or not phone:
+            logger.error("Missing payment method or phone for user %s", telegram_id)
+            _disable_auto_renew_due_to_error(application, telegram_id, chat_id)
+            return
 
-            details = rep_chess_db.get_subscription_details(telegram_id)
-            if not details or not details.get("subscription_auto_renew"):
-                return
+        payment = await asyncio.to_thread(
+            create_recurring_payment_sync,
+            payment_method_id,
+            telegram_id,
+            phone,
+        )
 
-            payment_method_id = details.get("subscription_payment_method_id")
-            phone = details.get("phone")
-            if not payment_method_id or not phone:
-                rep_chess_db.update_subscription_auto_renew(telegram_id, False)
-                rep_chess_db.update_subscription_next_charge(telegram_id, None)
-                await application.bot.send_message(chat_id=chat_id, text="❌ Автопродление остановлено. Проверьте данные карты.")
-                return
+        if not payment or payment.status != "succeeded":
+            logger.error("Recurring payment failed for user %s", telegram_id)
+            _disable_auto_renew_due_to_error(application, telegram_id, chat_id)
+            return
 
-            payment = await asyncio.to_thread(
-                create_recurring_payment_sync, payment_method_id, telegram_id, phone,
-            )
+        valid_until_moscow = add_auth(
+            telegram_id,
+            payment_method_id=payment_method_id,
+            auto_renew=True,
+        )
 
-            if not payment or payment.status != "succeeded":
-                rep_chess_db.update_subscription_auto_renew(telegram_id, False)
-                rep_chess_db.update_subscription_next_charge(telegram_id, None)
-                await application.bot.send_message(
-                    chat_id=chat_id,
-                    text="❌ Автопродление не удалось. Подписка останется активной до конца текущего периода.",
-                )
-                return
+        await application.bot.send_message(
+            chat_id=chat_id,
+            text=f"✅ Подписка успешно продлена!\nСледующий платёж: {valid_until_moscow:%d.%m.%Y}",
+        )
+        logger.info("Renewal succeeded for user %s", telegram_id)
 
-            await finalize_successful_payment(
-                application=application,
-                chat_id=chat_id,
-                telegram_id=telegram_id,
-                payment=payment,
-                is_recurring=True,
-            )
-    except asyncio.CancelledError:
-        logger.info("Auto renew task for %s cancelled", telegram_id)
-        raise
+    except Exception as e:
+        logger.error("Unexpected error during renewal for user %s: %s", telegram_id, e, exc_info=True)
+        _disable_auto_renew_due_to_error(application, telegram_id, chat_id)
+
+
+def _disable_auto_renew_due_to_error(
+    application: Application,
+    telegram_id: int,
+    chat_id: int,
+) -> None:
+    """Отключает автопродление и уведомляет пользователя."""
+    rep_chess_db.update_subscription_auto_renew(telegram_id, False)
+    rep_chess_db.update_subscription_next_charge(telegram_id, None)
+    application.create_task(
+        application.bot.send_message(
+            chat_id=chat_id,
+            text=(
+                "❌ Автопродление остановлено из-за ошибки.\n"
+                "Подписка останется активной до конца текущего периода.\n"
+                "Чтобы возобновить — обновите способ оплаты в разделе профиля."
+            ),
+        )
+    )
+    
+# user interface
 
 async def subscribe_button_clicked(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.callback_query:
@@ -626,7 +657,6 @@ async def stop_subscription_command(update: Update, context: ContextTypes.DEFAUL
 
     rep_chess_db.update_subscription_auto_renew(telegram_id, False)
     rep_chess_db.update_subscription_next_charge(telegram_id, None)
-    cancel_auto_renew_task(context.application, telegram_id)
 
     await _send_managed_message(
         context,
@@ -666,6 +696,8 @@ async def resume_subscription_command(update: Update, context: ContextTypes.DEFA
         reply_markup=keyboard,
     )
 
+# callbacks 
+
 async def resume_subscription_confirmation_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     if not query:
@@ -693,7 +725,6 @@ async def resume_subscription_confirmation_callback(update: Update, context: Con
 
     rep_chess_db.update_subscription_auto_renew(telegram_id, True)
     rep_chess_db.update_subscription_next_charge(telegram_id, valid_until.astimezone(UTC).isoformat())
-    schedule_auto_renew(context.application, telegram_id, chat_id)
 
     await query.edit_message_text(
         "Автопродление возобновлено.\n\n"
@@ -738,18 +769,6 @@ async def resume_subscription_cancel_callback(update: Update, context: ContextTy
     except TelegramError as error:
         logger.warning("Failed to answer resume cancel callback for %s: %s", query.id, error)
     await query.edit_message_text("Автопродление не возобновлено.")
-
-async def initialize_auto_renew_tasks(application) -> None:
-    records = rep_chess_db.get_auto_renew_subscriptions()
-    tasks = _ensure_task_storage(application)
-    for record in records:
-        telegram_id = record["telegram_id"]
-        chat_id = telegram_id
-        if telegram_id in tasks:
-            continue
-        tasks[telegram_id] = application.create_task(
-            auto_renew_worker(application=application, telegram_id=telegram_id, chat_id=chat_id)
-        )
 
 payment_callback_handlers = [
     MessageHandler(filters.Regex("^🌟 Подписка$"), subscribe_button_clicked),
