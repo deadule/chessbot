@@ -41,14 +41,26 @@ if not logfile_dir:
     print("Error: Can't find path to log directory.")
     print("Please set REPCHESS_LOG_DIR variable.")
     sys.exit(1)
-logging.basicConfig(
-    format="%(asctime)s %(name)s : %(levelname)s: %(message)s",
-    level=logging.DEBUG,
-    handlers=[
-        logging.FileHandler(os.path.join(logfile_dir, "bot.log")),  # Save logs to a file
-        logging.StreamHandler()  # Output logs to console
-    ]
-)
+os.makedirs(logfile_dir, exist_ok=True)
+formatter = logging.Formatter("%(asctime)s %(name)s : %(levelname)s: %(message)s")
+
+app_handler = logging.FileHandler(os.path.join(logfile_dir, "bot.log"))
+app_handler.setFormatter(formatter)
+
+db_handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
+db_handler.setFormatter(formatter)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+root_logger.addHandler(app_handler)
+root_logger.addHandler(logging.StreamHandler())
+
+db_logger = logging.getLogger("databaseAPI")
+db_logger.handlers.clear()
+db_logger.addHandler(db_handler)
+db_logger.addHandler(logging.StreamHandler())
+db_logger.propagate = False
+
 logger = logging.getLogger(__name__)
 
 

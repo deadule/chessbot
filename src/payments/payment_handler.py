@@ -2,9 +2,8 @@ import asyncio
 import datetime as dt
 import logging
 import os
-import uuid
 from decimal import Decimal
-from typing import Optional, Tuple
+from typing import Optional
 
 from yookassa import Configuration, Payment
 
@@ -19,8 +18,8 @@ from telegram import (
 )
 from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters, Application
 from telegram.error import TelegramError
-from zoneinfo import ZoneInfo
-from start import go_main_menu
+from payments.yookassa_client import YooKassaClient, _money_str
+from util import BACK_TO_MENU_KEYBOARD, MOSCOW_TZ, UTC, _coerce_datetime, _now_tz, _reply_managed, _send_managed_message
 
 logger = logging.getLogger(__name__)
 
@@ -36,181 +35,29 @@ if not ACCOUNT_ID or not SECRET_KEY:
 Configuration.account_id = ACCOUNT_ID
 Configuration.secret_key = SECRET_KEY
 
+# config
 SUBSCRIPTION_AMOUNT = Decimal("10.00")
 SUBSCRIPTION_PERIOD_DAYS = 30
 RETURN_URL = os.getenv("PAYMENT_RETURN_URL", "https://t.me/repchessbot")
 POLL_INTERVAL_SECONDS = 5
 MAX_POLL_ATTEMPTS = 12
+
+# keys
 SUBSCRIPTION_TASKS_KEY = "subscription_tasks"
 PHONE_STATE_KEY = "collect_subscription_phone"
 PENDING_SUBSCRIPTION_DATA_KEY = "pending_subscription_request"
+
+# callbacks
 RESUME_SUB_CONFIRM_CALLBACK = "resume_sub_confirm"
 RESUME_SUB_CANCEL_CALLBACK = "resume_sub_cancel"
 CONFIRM_SUBSCRIPTION_CALLBACK = "confirm_subscription"
 STOP_SUBSCRIPTION_PROCESS_CALLBACK = "stop_subscription_process"
 PAYMENT_PROMPTS_KEY = "payment_prompts"
+DELETE_PAYMENT_METHOD_CALLBACK = "delete_payment_method"
+MANAGE_SUB_CALLBACK = "manage_subscription"
 
-MOSCOW_TZ = ZoneInfo("Europe/Moscow")
-UTC = ZoneInfo("UTC")
-
-BACK_TO_MENU_KEYBOARD = InlineKeyboardMarkup([
-    [InlineKeyboardButton("<< Назад", callback_data="go_main_menu")]
-])
-
-# helpers 
-
-def _now_tz(tz: ZoneInfo = MOSCOW_TZ) -> dt.datetime:
-    return dt.datetime.now(tz)
-
-def _coerce_datetime(value: object, tz: ZoneInfo = MOSCOW_TZ) -> Optional[dt.datetime]:
-    if isinstance(value, dt.datetime):
-        result = value
-    elif isinstance(value, str):
-        try:
-            result = dt.datetime.fromisoformat(value)
-        except ValueError:
-            return None
-    else:
-        return None
-    if result.tzinfo is None:
-        return result.replace(tzinfo=UTC).astimezone(tz)
-    return result.astimezone(tz)
-
-def _money_str(amount: Decimal) -> str:
-    return f"{amount:.2f}"
-
-def _build_receipt(phone: str) -> dict:
-    return {
-        "customer": {"phone": phone},
-        "items": [
-            {
-                "description": "Месячная подписка",
-                "quantity": "1.00",
-                "amount": {
-                    "value": _money_str(SUBSCRIPTION_AMOUNT),
-                    "currency": "RUB",
-                },
-                "vat_code": 1,
-                "payment_mode": "full_prepayment",
-                "payment_subject": "service",
-            }
-        ],
-    }
-
-def _track_cleanup_message(context: ContextTypes.DEFAULT_TYPE, message_id: int) -> None:
-    context.user_data.setdefault("messages_to_delete", []).append(message_id)
-
-async def _cleanup_tracked_messages(
-    context: ContextTypes.DEFAULT_TYPE,
-    chat_id: int,
-) -> None:
-    message_ids = context.user_data.get("messages_to_delete") or []
-    if not message_ids:
-        return
-
-    remaining_ids = []
-    for message_id in message_ids[-50:]:
-        try:
-            await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
-        except TelegramError:
-            remaining_ids.append(message_id)
-    context.user_data["messages_to_delete"] = remaining_ids
-
-async def _send_managed_message(
-    context: ContextTypes.DEFAULT_TYPE,
-    *,
-    chat_id: int,
-    cleanup: bool = True,
-    track: bool = True,
-    **send_kwargs,
-):
-    if cleanup:
-        await _cleanup_tracked_messages(context, chat_id)
-    message = await context.bot.send_message(chat_id=chat_id, **send_kwargs)
-    if track:
-        _track_cleanup_message(context, message.message_id)
-    return message
-
-async def _reply_managed(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE,
-    *,
-    cleanup: bool = True,
-    track: bool = True,
-    **reply_kwargs,
-):
-    chat_id = update.effective_chat.id
-    if cleanup:
-        await _cleanup_tracked_messages(context, chat_id)
-    message = await update.message.reply_text(**reply_kwargs)
-    if track:
-        _track_cleanup_message(context, message.message_id)
-    return message
-
-# YOKASSA functionality 
-
-def create_subscription_payment_sync(telegram_id: int, phone: str) -> Tuple[Optional[str], Optional[str]]:
-    try:
-        payment = Payment.create(
-            {
-                "amount": 
-                    {
-                        "value": _money_str(SUBSCRIPTION_AMOUNT),
-                        "currency": "RUB"
-                    },
-                "confirmation": 
-                    {
-                        "type": "redirect", 
-                        "return_url": RETURN_URL
-                    },
-                "save_payment_method": True,
-                "capture": True,
-                "description": f"Subscription payment for user {telegram_id}",
-                "metadata": {
-                    "telegram_id": telegram_id
-                    },
-                "receipt": _build_receipt(phone),
-            },
-            str(uuid.uuid4()),
-        )
-        return payment.confirmation.confirmation_url, payment.id
-    except Exception as error:
-        logger.error("Error creating payment for %s: %s", telegram_id, error)
-        return None, None
-
-def create_recurring_payment_sync(
-    payment_method_id: str,
-    telegram_id: int,
-    phone: str,
-) -> Optional[Payment]:
-    try:
-        return Payment.create(
-            {
-                "amount": {
-                    "value": _money_str(SUBSCRIPTION_AMOUNT), 
-                    "currency": "RUB"
-                    },
-                "capture": True,
-                "description": f"Recurring subscription for user {telegram_id}",
-                "payment_method_id": payment_method_id,
-                "metadata": {
-                    "telegram_id": telegram_id
-                    },
-                "receipt": _build_receipt(phone),
-            },
-            str(uuid.uuid4()),
-        )
-    except Exception as error:
-        logger.error(
-            "Error creating recurring payment for %s with method %s: %s",
-            telegram_id,
-            payment_method_id,
-            error,
-        )
-        return None
 
 # DB logic
-
 def add_auth(
     telegram_id: int,
     *,
@@ -301,7 +148,6 @@ async def process_phone_number(update: Update, context: ContextTypes.DEFAULT_TYP
     )
 
 # payments
-
 async def initiate_subscription_payment(
     *,
     context: ContextTypes.DEFAULT_TYPE,
@@ -329,7 +175,7 @@ async def initiate_subscription_payment(
         return
 
     confirmation_url, payment_id = await asyncio.to_thread(
-        create_subscription_payment_sync,
+        YooKassaClient.create_subscription_payment,
         telegram_id,
         phone,
     )
@@ -467,8 +313,7 @@ async def finalize_successful_payment(
         reply_markup=BACK_TO_MENU_KEYBOARD
     )
 
-# scheduler
-
+# scheduler (move to jobs)
 async def subscription_scheduler(application: Application):
     """
     Фоновая задача: каждый час проверяет БД на наличие подписок,
@@ -537,7 +382,7 @@ async def process_single_renewal(
             return
 
         payment = await asyncio.to_thread(
-            create_recurring_payment_sync,
+            YooKassaClient.create_subscription_payment,
             payment_method_id,
             telegram_id,
             phone,
@@ -585,7 +430,6 @@ def _disable_auto_renew_due_to_error(
     )
     
 # user interface
-
 async def subscribe_button_clicked(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if update.callback_query:
         query = update.callback_query
@@ -661,7 +505,7 @@ async def stop_subscription_command(update: Update, context: ContextTypes.DEFAUL
     await _send_managed_message(
         context,
         chat_id=chat_id,
-        text="Автопродление отключено. Подписка останется активной до окончания оплаченного периода.",
+        text="Автопродление отключено. Подписка останется активной до окончания оплаченного периода. Для удаления привязанных данных отправьте команду /delete_payment_method",
     )
 
 async def resume_subscription_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -697,7 +541,6 @@ async def resume_subscription_command(update: Update, context: ContextTypes.DEFA
     )
 
 # callbacks 
-
 async def resume_subscription_confirmation_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     if not query:
@@ -770,10 +613,78 @@ async def resume_subscription_cancel_callback(update: Update, context: ContextTy
         logger.warning("Failed to answer resume cancel callback for %s: %s", query.id, error)
     await query.edit_message_text("Автопродление не возобновлено.")
 
+async def delete_payment_method_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    if not query:
+        return
+    await query.answer()
+
+    telegram_id = query.from_user.id
+    chat_id = query.message.chat_id
+
+    details = rep_chess_db.get_subscription_details(telegram_id)
+    if not details or not details.get("subscription_payment_method_id"):
+        await query.edit_message_text("У вас нет сохранённого способа оплаты.")
+        return
+
+    rep_chess_db.update_subscription_payment_method(telegram_id, None)
+
+    rep_chess_db.update_subscription_auto_renew(telegram_id, False)
+    rep_chess_db.update_subscription_next_charge(telegram_id, None)
+
+    valid_until = _coerce_datetime(details.get("subscription_valid_until"))
+    if valid_until:
+        valid_until_moscow = valid_until.astimezone(MOSCOW_TZ)
+        message = (
+            "✅ Способ оплаты удалён и автопродление отключено.\n"
+            f"Подписка остаётся действующей до: {valid_until_moscow:%d.%m.%Y}."
+        )
+    else:
+        message = (
+            "✅ Способ оплаты удалён и автопродление отключено.\n"
+            "Подписка остаётся активной до окончания текущего периода."
+        )
+
+    await query.edit_message_text(message)
+
+
+async def delete_payment_method_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    telegram_id = update.effective_user.id
+    chat_id = update.effective_chat.id
+
+    details = rep_chess_db.get_subscription_details(telegram_id)
+    if not details or not details.get("subscription_payment_method_id"):
+        await _send_managed_message(
+            context,
+            chat_id=chat_id,
+            text="У вас нет сохранённого способа оплаты."
+        )
+        return
+
+    rep_chess_db.update_subscription_payment_method(telegram_id, None)
+    rep_chess_db.update_subscription_auto_renew(telegram_id, False)
+    rep_chess_db.update_subscription_next_charge(telegram_id, None)
+
+    valid_until = _coerce_datetime(details.get("subscription_valid_until"))
+    if valid_until:
+        valid_until_moscow = valid_until.astimezone(MOSCOW_TZ)
+        message = (
+            "✅ Способ оплаты удалён и автопродление отключено.\n"
+            f"Подписка остаётся действующей до: {valid_until_moscow:%d.%m.%Y}."
+        )
+    else:
+        message = (
+            "✅ Способ оплаты удалён и автопродление отключено.\n"
+            "Подписка остаётся активной до окончания текущего периода."
+        )
+
+    await _send_managed_message(context, chat_id=chat_id, text=message)
+
 payment_callback_handlers = [
     MessageHandler(filters.Regex("^🌟 Подписка$"), subscribe_button_clicked),
     CommandHandler("stop_sub", stop_subscription_command),
     CommandHandler("resume_sub", resume_subscription_command),
+    CommandHandler("delete_payment_method", delete_payment_method_command),
     CallbackQueryHandler(resume_subscription_confirmation_callback, pattern=f"^{RESUME_SUB_CONFIRM_CALLBACK}$"),
     CallbackQueryHandler(resume_subscription_cancel_callback, pattern=f"^{RESUME_SUB_CANCEL_CALLBACK}$"),
     CallbackQueryHandler(subscription_process_confirm_callback, pattern=f"^{CONFIRM_SUBSCRIPTION_CALLBACK}$"),
