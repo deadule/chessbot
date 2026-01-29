@@ -1,4 +1,5 @@
 import logging
+import os
 import uuid
 from decimal import Decimal
 from typing import Optional, Tuple
@@ -10,6 +11,8 @@ from os import getenv
 
 ACCOUNT_ID = getenv("ACCOUNT_ID")
 SECRET_KEY = getenv("SECRET_KEY")
+RETURN_URL = os.getenv("PAYMENT_RETURN_URL", "https://t.me/repchessbot")
+SUBSCRIPTION_AMOUNT = Decimal(os.getenv("SUBSCRIPTION_AMOUNT"))
 
 if ACCOUNT_ID and SECRET_KEY:
     Configuration.account_id = ACCOUNT_ID
@@ -41,14 +44,12 @@ def _build_receipt(phone: str) -> dict:
     }
 
 class YooKassaClient:
-    SUBSCRIPTION_AMOUNT = Decimal("10.00")
     CURRENCY = "RUB"
 
     @staticmethod
     def create_subscription_payment(
         telegram_id: int,
         phone: str,
-        return_url: str,
     ) -> Tuple[Optional[str], Optional[str]]:
         """
         Создаёт платёж с сохранением метода оплаты (для автопродления).
@@ -58,12 +59,12 @@ class YooKassaClient:
             payment = Payment.create(
                 {
                     "amount": {
-                        "value": _money_str(YooKassaClient.SUBSCRIPTION_AMOUNT),
+                        "value": _money_str(SUBSCRIPTION_AMOUNT),
                         "currency": YooKassaClient.CURRENCY,
                     },
                     "confirmation": {
                         "type": "redirect",
-                        "return_url": return_url,
+                        "return_url": RETURN_URL,
                     },
                     "save_payment_method": True,
                     "capture": True,
@@ -94,7 +95,7 @@ class YooKassaClient:
             payment = Payment.create(
                 {
                     "amount": {
-                        "value": _money_str(YooKassaClient.SUBSCRIPTION_AMOUNT),
+                        "value": _money_str(SUBSCRIPTION_AMOUNT),
                         "currency": YooKassaClient.CURRENCY,
                     },
                     "capture": True,

@@ -32,7 +32,7 @@ def main_menu_reply_keyboard(context: ContextTypes.DEFAULT_TYPE):
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = update.message.from_user.first_name
     # Register user if it doesn't exist
-    rep_chess_db.register_user(update.message.from_user.id, name=name, city_id=1)
+    rep_chess_db.register_user(update.message.from_user.id, name=name, city_id=None)
     if "messages_to_delete" in context.user_data:
         context.user_data["messages_to_delete"] = []
     else:

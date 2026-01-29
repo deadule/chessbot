@@ -36,9 +36,9 @@ Configuration.account_id = ACCOUNT_ID
 Configuration.secret_key = SECRET_KEY
 
 # config
-SUBSCRIPTION_AMOUNT = Decimal("10.00")
+from .config import get_subscription_amount
+SUBSCRIPTION_AMOUNT = get_subscription_amount()
 SUBSCRIPTION_PERIOD_DAYS = 30
-RETURN_URL = os.getenv("PAYMENT_RETURN_URL", "https://t.me/repchessbot")
 POLL_INTERVAL_SECONDS = 5
 MAX_POLL_ATTEMPTS = 12
 
