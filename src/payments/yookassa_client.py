@@ -1,5 +1,5 @@
 import logging
-import os
+from os import getenv
 import uuid
 from decimal import Decimal
 from typing import Optional, Tuple
@@ -7,12 +7,11 @@ from yookassa import Configuration, Payment
 
 logger = logging.getLogger(__name__)
 
-from os import getenv
-
 ACCOUNT_ID = getenv("ACCOUNT_ID")
 SECRET_KEY = getenv("SECRET_KEY")
-RETURN_URL = os.getenv("PAYMENT_RETURN_URL", "https://t.me/repchessbot")
-SUBSCRIPTION_AMOUNT = Decimal(os.getenv("SUBSCRIPTION_AMOUNT"))
+RETURN_URL = getenv("PAYMENT_RETURN_URL", "https://t.me/repchessbot")
+SUBSCRIPTION_AMOUNT = Decimal(getenv("SUBSCRIPTION_AMOUNT"))
+CURRENCY = "RUB"
 
 if ACCOUNT_ID and SECRET_KEY:
     Configuration.account_id = ACCOUNT_ID
@@ -33,8 +32,8 @@ def _build_receipt(phone: str) -> dict:
                 "description": "Месячная подписка",
                 "quantity": "1.00",
                 "amount": {
-                    "value": _money_str(Decimal("10.00")),  # TODO: вынести в конфиг
-                    "currency": "RUB",
+                    "value": _money_str(SUBSCRIPTION_AMOUNT),
+                    "currency": CURRENCY,
                 },
                 "vat_code": 1,
                 "payment_mode": "full_prepayment",
@@ -44,8 +43,6 @@ def _build_receipt(phone: str) -> dict:
     }
 
 class YooKassaClient:
-    CURRENCY = "RUB"
-
     @staticmethod
     def create_subscription_payment(
         telegram_id: int,
@@ -60,7 +57,7 @@ class YooKassaClient:
                 {
                     "amount": {
                         "value": _money_str(SUBSCRIPTION_AMOUNT),
-                        "currency": YooKassaClient.CURRENCY,
+                        "currency": CURRENCY,
                     },
                     "confirmation": {
                         "type": "redirect",
@@ -96,7 +93,7 @@ class YooKassaClient:
                 {
                     "amount": {
                         "value": _money_str(SUBSCRIPTION_AMOUNT),
-                        "currency": YooKassaClient.CURRENCY,
+                        "currency": CURRENCY,
                     },
                     "capture": True,
                     "description": f"Recurring subscription for user {telegram_id}",

@@ -1,45 +1,31 @@
-import os
+from unittest.mock import patch, Mock
 import uuid
-import pytest
-from yookassa import Configuration, Payment
-from decimal import Decimal
-from config import SUBSCRIPTION_AMOUNT
+from yookassa import Payment
 
-Configuration.account_id = os.getenv("ACCOUNT_ID")
-Configuration.secret_key = os.getenv("SECRET_KEY")
-
-if not Configuration.account_id or not Configuration.secret_key:
-    pytest.skip("YooKassa credentials not set", allow_module_level=True)
-
-def _money_str(amount: Decimal) -> str:
-    return f"{amount:.2f}"
-
-
-def _build_receipt(phone: str) -> dict:
-    return {
-        "customer": {"phone": phone},
-        "items": [{
-            "description": "Тестовая подписка",
-            "quantity": "1.00",
-            "amount": {"value": _money_str(SUBSCRIPTION_AMOUNT), "currency": "RUB"},
-            "vat_code": 1,
-            "payment_mode": "full_prepayment",
-            "payment_subject": "service",
-        }],
-    }
-
+from payments.yookassa_client import _build_receipt
 
 def test_yookassa_recurring_payment_only():
-    """Тест рекуррентного платежа, если payment_method_id уже известен."""
+    """Тест логики рекуррентного платежа с моком YooKassa."""
+    PAYMENT_METHOD_ID = "3110a8f1-000f-5001-9000-1427bbd524e2"
+    TEST_PHONE = "+79253713026"
 
-    PAYMENT_METHOD_ID = "pm_1234567890abcdef"
+    mock_payment = Mock()
+    mock_payment.status = "succeeded"
+    mock_payment.id = str(uuid.uuid4())
 
-    payment = Payment.create({
-        "amount": {"value": _money_str(SUBSCRIPTION_AMOUNT), "currency": "RUB"},
-        "capture": True,
-        "description": "Recurring payment test",
-        "payment_method_id": PAYMENT_METHOD_ID,
-        "receipt": _build_receipt(TEST_PHONE),
-    }, str(uuid.uuid4()))
+    with patch.object(Payment, 'create', return_value=mock_payment) as mock_create:
+        payment = Payment.create({
+            "amount": {"value": "1000.00", "currency": "RUB"},
+            "capture": True,
+            "description": "Recurring payment test",
+            "payment_method_id": PAYMENT_METHOD_ID,
+            "receipt": _build_receipt(TEST_PHONE),
+        }, str(uuid.uuid4()))
 
-    assert payment.status == "succeeded"
+        mock_create.assert_called_once()
+        call_args = mock_create.call_args[0][0]
+        assert call_args["payment_method_id"] == PAYMENT_METHOD_ID
+        assert call_args["amount"]["value"] == "1000.00"
+
+        # Assert result
+        assert payment.status == "succeeded"

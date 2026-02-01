@@ -195,7 +195,7 @@ async def initiate_subscription_payment(
         chat_id=chat_id,
         text=(
             "Перейдите по ссылке ниже для оформления ежемесячной подписки на сайте ЮKКасса.\n"
-            "Для тестовой среды используйте карту 5555 5555 5555 4477 (12/22, CVC 000)."
+            # "Для тестовой среды используйте карту 5555 5555 5555 4477 (12/22, CVC 000)."
         ),
         reply_markup=keyboard,
         cleanup=False,
@@ -382,7 +382,7 @@ async def process_single_renewal(
             return
 
         payment = await asyncio.to_thread(
-            YooKassaClient.create_subscription_payment,
+            YooKassaClient.create_recurring_payment,
             payment_method_id,
             telegram_id,
             phone,
@@ -515,6 +515,14 @@ async def resume_subscription_command(update: Update, context: ContextTypes.DEFA
     details = rep_chess_db.get_subscription_details(telegram_id)
     if not details or not details.get("active_subscription"):
         await _send_managed_message(context, chat_id=chat_id, text="У вас нет активной подписки.")
+        return
+
+    if not details or not details.get("subscription_payment_method_id"):
+        await _send_managed_message(
+            context,
+            chat_id=chat_id,
+            text="У вас нет сохранённого способа оплаты."
+        )
         return
 
     if details.get("subscription_auto_renew"):

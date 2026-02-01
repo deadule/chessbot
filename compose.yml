@@ -1,25 +1,54 @@
 services:
+
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: repchess
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # debug ports
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d repchess"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   bot:
-    image: cr.yandex/crpbcr0nc3rlukp8pajp/chessbot/bot:latest
     build:
       context: .
       dockerfile: bot.Dockerfile
     env_file:
       - .env
+    environment:
+      - REPCHESS_LOG_DIR=/app/data/logs
+      - TELEGRAM_API_BASE=http://telegram-bot-api:8081
     volumes:
-      - /opt/chessbot/bot:/data:rw
-    deploy:
-      update_config:
-        order: stop-first
-        failure_action: rollback
+      - ../data:/app/data 
+      - ../telegram_bot_data:/bot_data
+    depends_on:
+      db:
+        condition: service_healthy
+      telegram-bot-api:
+        condition: service_started
 
   telegram-bot-api:
-    image: tdlight/telegram-bot-api:latest
+    image: telegram-bot-api-local
+    container_name: telegram-bot-api
     restart: unless-stopped
+    env_file: 
+      - .env
     command:
       - "--local"
       - "--dir=/bot_data"
     volumes:
-      - ./telegram-bot-api:/var/lib/telegram-bot-api
+      - ../telegram_bot_data:/bot_data
     ports:
       - "127.0.0.1:8081:8081"
+
+volumes:
+  pgdata:

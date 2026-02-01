@@ -1,14 +1,12 @@
 import os
 from pathlib import Path
 import re
-import tempfile
 import subprocess
 import logging
 import time
 import asyncio
 import shutil
 from typing import Tuple, Optional, Callable
-from telegram import Bot
 from telegram.error import TelegramError
 
 logger = logging.getLogger(__name__)
@@ -245,7 +243,6 @@ class VideoProcessor:
 
 
 # ffmpeg helpers
-
 
     async def _convert_video(self, input_path: str, temp_dir: str, quality: str, video_id: int) -> Optional[str]:
         try:

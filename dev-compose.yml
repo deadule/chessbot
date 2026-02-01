@@ -28,8 +28,8 @@ services:
       - REPCHESS_LOG_DIR=/app/data/logs
       - TELEGRAM_API_BASE=http://telegram-bot-api:8081
     volumes:
-      - ../data:/app/data 
-      - ../telegram_bot_data:/bot_data
+      - ./data:/app/data 
+      - ./telegram_bot_data:/bot_data
     depends_on:
       db:
         condition: service_healthy
@@ -44,9 +44,8 @@ services:
       - .env
     command:
       - "--local"
-      - "--dir=/bot_data"
     volumes:
-      - ../telegram_bot_data:/bot_data
+      - ./telegram_bot_data:/bot_data
     ports:
       - "127.0.0.1:8081:8081"
 
