@@ -1,0 +1,16 @@
+FROM ubuntu:24.04
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libssl3 zlib1g && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY telegram-bot-api /usr/local/bin/telegram-bot-api
+
+RUN chmod +x /usr/local/bin/telegram-bot-api
+
+RUN mkdir -p /data && chown 1000:1000 /data
+
+USER 1000
+
+WORKDIR /data
+ENTRYPOINT ["/usr/local/bin/telegram-bot-api"]

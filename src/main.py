@@ -2,6 +2,14 @@ import logging
 import os
 import sys
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # If python-dotenv is not installed, continue without it
+    pass
+
 from telegram import Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -9,17 +17,12 @@ from telegram.ext import (
     MessageHandler,
     filters,
     PicklePersistence,
+    Application,
 )
-
+from telegram.request import HTTPXRequest
 
 # Add to python path some directories
 sys.path.insert(0, os.path.abspath("src"))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "profile_handlers")))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "admin_handlers")))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "timetable_handlers")))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "camp_handlers")))
-sys.path.insert(0, os.path.abspath(os.path.join("src", "registration_handlers")))
-
 
 from start import start_handlers
 from databaseAPI import rep_chess_db
@@ -27,7 +30,9 @@ from admin_handlers import admin_callback_handlers
 from profile_handlers import profile_callback_handlers
 from timetable_handlers import timetable_callback_handlers, process_new_post, process_edited_post
 from camp_handlers import camp_callback_handlers
+from lessons_handlers import lessons_callback_handlers
 from registration_handlers import registration_callback_handlers
+from payments import payment_callback_handlers
 
 
 # Configure logging
@@ -36,14 +41,26 @@ if not logfile_dir:
     print("Error: Can't find path to log directory.")
     print("Please set REPCHESS_LOG_DIR variable.")
     sys.exit(1)
-logging.basicConfig(
-    format="%(asctime)s %(name)s : %(levelname)s: %(message)s",
-    level=logging.DEBUG,
-    handlers=[
-        logging.FileHandler(os.path.join(logfile_dir, "bot.log")),  # Save logs to a file
-        logging.StreamHandler()  # Output logs to console
-    ]
-)
+os.makedirs(logfile_dir, exist_ok=True)
+formatter = logging.Formatter("%(asctime)s %(name)s : %(levelname)s: %(message)s")
+
+app_handler = logging.FileHandler(os.path.join(logfile_dir, "bot.log"))
+app_handler.setFormatter(formatter)
+
+db_handler = logging.FileHandler(os.path.join(logfile_dir, "database.log"))
+db_handler.setFormatter(formatter)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.DEBUG)
+root_logger.addHandler(app_handler)
+root_logger.addHandler(logging.StreamHandler())
+
+db_logger = logging.getLogger("databaseAPI")
+db_logger.handlers.clear()
+db_logger.addHandler(db_handler)
+db_logger.addHandler(logging.StreamHandler())
+db_logger.propagate = False
+
 logger = logging.getLogger(__name__)
 
 
@@ -121,41 +138,63 @@ async def global_file_message_handler(update: Update, context: ContextTypes.DEFA
 
     await context.user_data["file_state"](update, context)
 
+async def post_init(application: Application):
+    from payments import subscription_scheduler
+    application.create_task(subscription_scheduler(application))
 
-def start_tg_bot(token: str):
+api_base = os.getenv("TELEGRAM_API_BASE", "http://telegram-bot-api:8081/bot")
+
+def start_tg_bot(token: str, use_webhook: bool = False, webhook_url: str = None, webhook_port: int = 8443):
     prs = PicklePersistence(filepath=".bot_data_cache")
-    application = ApplicationBuilder().token(token).persistence(persistence=prs).build()
+    
+    request = HTTPXRequest(
+        connection_pool_size=8,
+        read_timeout=600,
+        write_timeout=600,
+        connect_timeout=30,
+    )
+    
+    application = (
+        ApplicationBuilder()
+        .token(token)
+        .persistence(persistence=prs)
+        .post_init(post_init)
+        .base_url(f"{api_base}/bot")
+        .base_file_url(f"{api_base}/file/bot")
+        .local_mode(True)
+        .request(request)
+        .build()
+    )
 
     application.add_handlers(start_handlers)
     application.add_handlers(admin_callback_handlers)
     application.add_handlers(profile_callback_handlers)
     application.add_handlers(timetable_callback_handlers)
     application.add_handlers(camp_callback_handlers)
+    application.add_handlers(lessons_callback_handlers)
     application.add_handlers(registration_callback_handlers)
+    application.add_handlers(payment_callback_handlers)
     application.add_handler(MessageHandler(filters.Document.ALL, global_file_message_handler))
     application.add_handler(MessageHandler(filters.FORWARDED, global_forwarded_message_handler))
     application.add_handler(MessageHandler(filters.ALL, global_message_handler))
-
-    # never return
+    
+    logger.info("Starting bot with polling")
     application.run_polling()
 
     logger.info("Bot stopped")
 
 
 def main():
-    # Init database
     rep_chess_db.initialize()
 
-    # Get telegram token
     telegram_token = os.getenv("REPCHESS_TELEGRAM_BOT_TOKEN")
     if not telegram_token:
         logger.error("Can't find path to telegram token!")
         print("Please set REPCHESS_TELEGRAM_BOT_TOKEN variable.")
         sys.exit(1)
-
-    # Start bot
     try:
-        start_tg_bot(telegram_token)
+        logger.info("Starting bot with polling mode")
+        start_tg_bot(telegram_token, use_webhook=False)
     except Exception as e:
         logger.error(f"Error in main function: {e}", exc_info=True)
 

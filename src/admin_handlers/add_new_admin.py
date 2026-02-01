@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
 from databaseAPI import rep_chess_db
-from admin_main_menu import admin_main_menu, SUPER_ADMIN_ID
+from .admin_main_menu import admin_main_menu, SUPER_ADMIN_ID
 
 
 async def process_adding_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):

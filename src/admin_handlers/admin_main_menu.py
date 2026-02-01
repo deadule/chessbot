@@ -7,7 +7,7 @@ from start import go_main_menu
 
 # Only one person have super admin permissions.
 SUPER_ADMIN_ID = 928688258
-
+ 
 
 admin_inline_keyboard = InlineKeyboardMarkup([
     [InlineKeyboardButton("Открыть регистрацию на турнир", callback_data="admin_open_registration")],
@@ -29,6 +29,8 @@ admin_inline_keyboard = InlineKeyboardMarkup([
 
     [InlineKeyboardButton("Добавить новый город", callback_data="admin_add_new_city")],
     [InlineKeyboardButton("Удалить город", callback_data="admin_delete_city")],
+
+    [InlineKeyboardButton("🎥 Управление видео", callback_data="admin_video_management")],
 
     [InlineKeyboardButton("💀 Добавить нового админа", callback_data="admin_add_new_admin")],
     [InlineKeyboardButton("💀 Удалить админа", callback_data="admin_delete_admin")],

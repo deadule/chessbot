@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
 from databaseAPI import rep_chess_db
-from admin_main_menu import admin_inline_keyboard
+from .admin_main_menu import admin_inline_keyboard
 from util import construct_timetable_buttons, check_string
 
 

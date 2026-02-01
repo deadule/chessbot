@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import CallbackQueryHandler, ContextTypes
 
 from databaseAPI import rep_chess_db
-from admin_main_menu import SUPER_ADMIN_ID, admin_main_menu
+from .admin_main_menu import SUPER_ADMIN_ID, admin_main_menu
 
 
 async def process_deleting_admin(update: Update, context: ContextTypes.DEFAULT_TYPE):

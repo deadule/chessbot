@@ -4,7 +4,7 @@ from telegram import Update, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.ext import ContextTypes, CallbackQueryHandler
 
 from databaseAPI import rep_chess_db
-from main_menu_handler import main_menu_handler
+from .main_menu_handler import main_menu_handler
 
 
 logger = logging.getLogger(__name__)
